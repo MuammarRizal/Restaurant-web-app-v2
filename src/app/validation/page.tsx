@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { Scanner } from '@yudiel/react-qr-scanner'
 import { FaCamera, FaCheckCircle, FaTimesCircle } from 'react-icons/fa'
+import { ScannerError } from '@/types/scanner'
 
 const QrScannerPage = () => {
   const [result, setResult] = useState<string | null>(null)
@@ -37,7 +38,7 @@ const QrScannerPage = () => {
                     setIsScanning(false)
                   }
                 }}
-                onError={(error) => {
+                onError={(error: any):void => {
                   setError(error?.message || 'Gagal memindai')
                   setIsScanning(false)
                 }}
