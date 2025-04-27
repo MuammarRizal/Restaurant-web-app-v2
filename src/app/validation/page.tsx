@@ -41,11 +41,11 @@ const QrScannerPage = () => {
                   setError(error?.message || 'Gagal memindai')
                   setIsScanning(false)
                 }}
-                formats={formats}
-                options={{
-                  delayBetweenScanAttempts: 500,
-                  maxScansPerSecond: 5,
-                }}
+                formats={[ 'qr_code','code_128','code_39','data_matrix']}
+                // options={{
+                //   delayBetweenScanAttempts: 500,
+                //   maxScansPerSecond: 5,
+                // }}
                 components={{
                   audio: false, // Matikan suara beep
                 }}
