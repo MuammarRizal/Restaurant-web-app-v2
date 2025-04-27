@@ -1,46 +1,19 @@
 "use client";
+import BackButton from "@/components/BackButton";
+import ButtonAddCart from "@/components/ButtonAddCart";
+import Loading from "@/components/Loading";
+import { CartItem } from "@/types/cart";
+import { MenuItem } from "@/types/menus";
+import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-type MenuItem = {
-  id: number;
-  name: string;
-  price: number;
-  category: string;
-  image: string;
-};
-
-type CartItem = MenuItem & {
-  quantity: number;
-  notes?: string;
-};
-
 const Menus = () => {
-  // Menu data with additional items
-  const menuItems: MenuItem[] = [
-    // Makanan
-    { id: 1, name: "Nasi Goreng Spesial", price: 25000, category: "Makanan", image: "https://sanex.co.id/wp-content/uploads/2024/11/2734.jpg" },
-    { id: 2, name: "Mie Ayam Jamur", price: 20000, category: "Makanan", image: "https://www.unileverfoodsolutions.co.id/dam/global-ufs/mcos/SEA/calcmenu/recipes/ID-recipes/general/Mie-Ayam-Jamur-Enak-dan-Praktis-/RESEP%20MIE%20AYAM%20JAMUR-header.jpeg" },
-    { id: 3, name: "Ayam Bakar Madu", price: 30000, category: "Makanan", image: "https://cdn1-production-images-kly.akamaized.net/vxvwNUeOwrEXXW4vOZN8Dr_WrCc=/800x450/smart/filters:quality(75):strip_icc():format(webp)/kly-media-production/medias/4583813/original/020048500_1695287593-WhatsApp_Image_2023-09-21_at_15.18.15.jpeg" },
-    { id: 7, name: "Sate Ayam (10 tusuk)", price: 22000, category: "Makanan", image: "https://img-global.cpcdn.com/recipes/5b7a6c1a9d1e4f2a/1200x630cq70/photo.jpg" },
-    { id: 8, name: "Gado-Gado", price: 18000, category: "Makanan", image: "https://cdn0-production-images-kly.akamaized.net/4QYciN5XK1X8H6m7uDdX7n0nR6U=/1200x675/smart/filters:quality(75):strip_icc():format(webp)/kly-media-production/medias/3243004/original/097060800_1601445941-shutterstock_579600934.jpg" },
-    { id: 9, name: "Soto Ayam", price: 17000, category: "Makanan", image: "https://cdn0-production-images-kly.akamaized.net/mt8u4L3vLg8WxY9X9Q3g0w0Xx6U=/1200x675/smart/filters:quality(75):strip_icc():format(webp)/kly-media-production/medias/3243004/original/097060800_1601445941-shutterstock_579600934.jpg" },
-    
-    // Minuman
-    { id: 4, name: "Es Teh Manis", price: 5000, category: "Minuman", image: "https://d1vbn70lmn1nqe.cloudfront.net/prod/wp-content/uploads/2021/06/15093247/Ketahui-Fakta-Es-Teh-Manis.jpg" },
-    { id: 5, name: "Jus Alpukat", price: 15000, category: "Minuman", image: "https://res.cloudinary.com/dk0z4ums3/image/upload/v1708574230/attached_image/7-manfaat-jus-alpukat-bagi-kesehatan-yang-sayang-untuk-dilewatkan.jpg" },
-    { id: 6, name: "Kopi Susu", price: 12000, category: "Minuman", image: "https://www.nescafe.com/id/sites/default/files/2023-08/Jenis-jenis_Kopi_Susu_yang_Enak__Menyegarkan._Sudah_Pernah_Coba_hero.jpg" },
-    { id: 10, name: "Es Jeruk", price: 8000, category: "Minuman", image: "https://asset.kompas.com/crops/6zW6zQJQ5hJg4i8z5V5Z5X5X5X5=/1200x675/smart/filters:quality(75):strip_icc():format(webp)/media/2021/06/15/es-jeruk-nipis.jpg" },
-    { id: 11, name: "Es Campur", price: 12000, category: "Minuman", image: "https://cdn0-production-images-kly.akamaized.net/4QYciN5XK1X8H6m7uDdX7n0nR6U=/1200x675/smart/filters:quality(75):strip_icc():format(webp)/kly-media-production/medias/3243004/original/097060800_1601445941-shutterstock_579600934.jpg" },
-    { id: 12, name: "Air Mineral", price: 3000, category: "Minuman", image: "https://cdn0-production-images-kly.akamaized.net/4QYciN5XK1X8H6m7uDdX7n0nR6U=/1200x675/smart/filters:quality(75):strip_icc():format(webp)/kly-media-production/medias/3243004/original/097060800_1601445941-shutterstock_579600934.jpg" },
-    
-    // Dessert
-    { id: 13, name: "Pisang Goreng", price: 10000, category: "Dessert", image: "https://cdn0-production-images-kly.akamaized.net/4QYciN5XK1X8H6m7uDdX7n0nR6U=/1200x675/smart/filters:quality(75):strip_icc():format(webp)/kly-media-production/medias/3243004/original/097060800_1601445941-shutterstock_579600934.jpg" },
-    { id: 14, name: "Klepon", price: 8000, category: "Dessert", image: "https://cdn0-production-images-kly.akamaized.net/4QYciN5XK1X8H6m7uDdX7n0nR6U=/1200x675/smart/filters:quality(75):strip_icc():format(webp)/kly-media-production/medias/3243004/original/097060800_1601445941-shutterstock_579600934.jpg" },
-  ];
-
   // State
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [menus, setMenus] = useState<CartItem[]>([]);
+  const [loading,setLoading] = useState<boolean>(true);
+  const [error,setError] = useState(null)
   const [activeCategory, setActiveCategory] = useState<string>("Semua");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
@@ -48,14 +21,14 @@ const Menus = () => {
   const router = useRouter();
 
   // Filter menu items
-  const filteredItems = menuItems.filter(item => {
+  const filteredItems = menus.filter(item => {
     const matchesCategory = activeCategory === "Semua" || item.category === activeCategory;
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
   // Categories
-  const categories = ["Semua", ...new Set(menuItems.map(item => item.category))];
+  const categories = ["Semua", ...new Set(menus.map(item => item.category))];
 
   // Cart functions
   const addToCart = (item: MenuItem) => {
@@ -99,8 +72,23 @@ const Menus = () => {
   const total = subtotal + tax;
 
   useEffect(() => {
-    console.log({cart})
-  },[cart])
+    const fetchData = async () => {
+      try {
+        const menus = await axios.get("http://localhost:3000/api/menus");
+        setMenus(menus.data.data)
+      } catch (error: any) {
+        setError(error.message)
+      }finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  },[])
+
+console.log(menus)
+  if(loading) return <Loading />
+  if(error) return <div>Error: {error}</div>
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -119,6 +107,7 @@ const Menus = () => {
           <div className="lg:w-2/3 bg-white rounded-lg shadow-md p-4">
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
               <div className="flex space-x-2 overflow-x-auto pb-2 w-full">
+                <BackButton />
                 {categories.map(category => (
                   <button
                     key={category}
@@ -155,16 +144,7 @@ const Menus = () => {
                       }}
                     />
                   </div>
-                  <div className="p-4 bg-orange-50">
-                    <h3 className="font-semibold text-lg">{item.name}</h3>
-                    <p className="text-orange-600 font-bold mt-1">Rp {item.price.toLocaleString()}</p>
-                    <button
-                      onClick={() => addToCart(item)}
-                      className="mt-3 w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition-colors"
-                    >
-                      Tambah
-                    </button>
-                  </div>
+                  <ButtonAddCart item={item} addToCart={addToCart}/>
                 </div>
               ))}
             </div>
@@ -201,7 +181,7 @@ const Menus = () => {
                         </div>
                         <div className="flex-grow">
                           <h3 className="font-medium">{item.name}</h3>
-                          <p className="text-orange-600 font-bold">Rp {item.price.toLocaleString()}</p>
+                          {/* <p className="text-orange-600 font-bold">Rp {item.price.toLocaleString()}</p> */}
                           <div className="flex items-center mt-1">
                             <button
                               onClick={() => updateQuantity(item.id, item.quantity - 1)}
@@ -258,7 +238,7 @@ const Menus = () => {
 
                 <div className="mt-6 border-t border-gray-200 pt-4">
                   <button 
-                    className="mt-6 w-full bg-orange-500 text-white py-3 rounded-lg hover:bg-orange-600 transition-colors font-medium"
+                    className="mt-6 w-full bg-orange-500 text-white py-3 rounded-lg hover:bg-orange-600 transition-colors font-medium cursor-pointer"
                     onClick={() => {
                       console.log("Order submitted:", {
                         items: cart,
@@ -269,7 +249,7 @@ const Menus = () => {
                       router.push("order-list")
                     }}
                   >
-                    Lanjut ke Pembayaran
+                    Lanjutkan Pemesanan
                   </button>
                 </div>
               </>
