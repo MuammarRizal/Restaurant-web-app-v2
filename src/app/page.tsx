@@ -10,7 +10,6 @@ type Table = {
 const Home = () => {
   const [isNameWarningOpen, setIsNameWarningOpen] = useState<boolean>(false);
   const [name, setName] = useState<string>("");
-  const [menuTable, setMenuTable] = useState<string>("");
   const [tableNumber, setTableNumber] = useState<string>("");
   const [showTableList, setShowTableList] = useState<boolean>(true);
   const [tables] = useState<Table[]>([
@@ -97,7 +96,7 @@ const Home = () => {
                       >
                         Meja {table.number}
                         {table.status === "occupied" && (
-                          <span className="block text-xs text-gray-500">(Terisi)</span>
+                          <span className="block text-xs text-gray-500">(Penuh)</span>
                         )}
                       </button>
                     ))}

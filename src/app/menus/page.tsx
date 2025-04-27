@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type MenuItem = {
   id: number;
@@ -97,6 +97,10 @@ const Menus = () => {
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const tax = subtotal * 0.1;
   const total = subtotal + tax;
+
+  useEffect(() => {
+    console.log({cart})
+  },[cart])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -253,19 +257,6 @@ const Menus = () => {
                 </div>
 
                 <div className="mt-6 border-t border-gray-200 pt-4">
-                  <div className="flex justify-between mb-2">
-                    <span>Subtotal:</span>
-                    <span>Rp {subtotal.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between mb-2">
-                    <span>Pajak (10%):</span>
-                    <span>Rp {tax.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between font-bold text-lg mt-4">
-                    <span>Total:</span>
-                    <span className="text-orange-600">Rp {total.toLocaleString()}</span>
-                  </div>
-
                   <button 
                     className="mt-6 w-full bg-orange-500 text-white py-3 rounded-lg hover:bg-orange-600 transition-colors font-medium"
                     onClick={() => {
@@ -274,8 +265,8 @@ const Menus = () => {
                         notes,
                         total
                       });
-                      router.push("order-list")
                       // Add your order submission logic here
+                      router.push("order-list")
                     }}
                   >
                     Lanjut ke Pembayaran
