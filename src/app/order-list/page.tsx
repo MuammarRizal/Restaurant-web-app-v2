@@ -65,9 +65,9 @@ const OrderTable = () => {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => router.push('/order-inprogress')}
-          className="flex items-center gap-2 px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors shadow-md"
+          className="flex items-center gap-2 px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors shadow-md cursor-pointer"
         >
-          <span>Lihat Proses Masak</span>
+          <span>Proses Pesanan</span>
           <ArrowRight className="w-5 h-5" />
         </motion.button>
       </motion.div>

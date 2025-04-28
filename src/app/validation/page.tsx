@@ -27,7 +27,6 @@ const QrScannerPage = () => {
           </h1>
         </div>
 
-        {/* Scanner Area */}
         <div className="p-5">
           {isScanning ? (
             <div className="relative aspect-square w-full rounded-lg overflow-hidden border-2 border-dashed border-blue-300">
