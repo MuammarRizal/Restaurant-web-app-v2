@@ -1,6 +1,9 @@
 "use client";
+import { increment } from "@/features/counter/counterSlice";
+import { RootState } from "@/store/store";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 type Table = {
   number: string;
@@ -37,9 +40,11 @@ const Home = () => {
     // Proceed to menu page
     console.log("Name:", name, "Table:", tableNumber);
   };
-
+  const counterValue = useSelector(( state : RootState ) => state.counter.value)
+  const dispatch = useDispatch()
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white py-10 px-4">
+      <button onClick={() => dispatch(increment())}>TESSSS {counterValue}</button>
       <div className="mx-auto max-w-4xl">
         {/* Header Section */}
         <header className="mb-12 text-center">
