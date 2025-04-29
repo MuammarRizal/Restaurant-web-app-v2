@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 type Table = {
-  number: string;
+  table: string;
   status: "available" | "occupied";
 };
 
@@ -16,10 +16,11 @@ const Home = () => {
   const [tableNumber, setTableNumber] = useState<string>("");
   const [showTableList, setShowTableList] = useState<boolean>(true);
   const [tables] = useState<Table[]>([
-    { number: "1", status: "available" },
-    { number: "2", status: "occupied" },
-    { number: "3", status: "available" },
-    { number: "4", status: "available" },
+    { table: "1", status: "available" },
+    { table: "2", status: "occupied" },
+    { table: "3", status: "available" },
+    { table: "4", status: "available" },
+    { table: "Take Away", status: "available"}
   ]);
 
   const router = useRouter();
@@ -83,30 +84,40 @@ const Home = () => {
               {/* Table List */}
               {showTableList && (
                 <div className="mt-2 rounded-lg border border-gray-200 p-3">
-                  <h3 className="mb-2">Pilih Meja : </h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    {tables.map((table) => (
+                <h3 className="mb-2">Pilih Meja :</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {tables.map((table, index) => {
+                    const isLastItem = index === tables.length - 1;
+                    const isTakeAway = table.table === "Take Away";
+                    const isAvailable = table.status === "available";
+                    
+                    return (
                       <button
-                        key={table.number}
+                        key={table.table}
                         type="button"
-                        onClick={() => selectTable(table.number)}
-                        disabled={table.status === "occupied"}
-                        className={`rounded-lg p-2 text-center ${
-                          table.status === "available"
-                            ? "bg-orange-100 text-orange-800 hover:bg-orange-200"
-                            : "bg-gray-100 text-gray-500 cursor-not-allowed"
-                        } ${
-                          tableNumber === table.number ? "ring-2 ring-orange-500" : ""
-                        }`}
+                        onClick={() => selectTable(table.table)}
+                        disabled={!isAvailable}
+                        className={`
+                          rounded-lg p-2 text-center transition-colors
+                          ${isLastItem ? 'col-span-2' : ''}
+                          ${isAvailable
+                            ? isTakeAway
+                              ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                              : 'bg-orange-100 text-orange-800 hover:bg-orange-200'
+                            : 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                          }
+                          ${tableNumber === table.table ? 'ring-2 ring-orange-500' : ''}
+                        `}
                       >
-                        Meja {table.number}
-                        {table.status === "occupied" && (
+                        {isTakeAway ? "Take Away" : `Meja ${table.table}`}
+                        {!isAvailable && (
                           <span className="block text-xs text-gray-500">(Penuh)</span>
                         )}
                       </button>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
+              </div>
               )}
             </div>
 
