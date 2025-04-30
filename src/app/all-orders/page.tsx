@@ -1,7 +1,9 @@
 "use client";
+import { RootState } from "@/store/store";
 import { motion, AnimatePresence } from "framer-motion";
 import { Clock, CheckCircle, Utensils, Coffee } from "lucide-react";
 import { useState } from "react";
+import { useSelector } from "react-redux";
 
 type OrderStatus = "preparing" | "delivered";
 
@@ -190,6 +192,7 @@ const CustomerOrderPage = () => {
       image: "https://img.freepik.com/free-photo/rawon-soup-traditional-indonesian-food_141793-3469.jpg"
     }
   ]);
+
 
   // Status configuration
   const statusConfig = {

@@ -2,11 +2,14 @@
 import BackButton from "@/components/BackButton";
 import ButtonAddCart from "@/components/ButtonAddCart";
 import Loading from "@/components/Loading";
+import { addItem } from "@/features/cart/cartSlice";
+import { RootState } from "@/store/store";
 import { CartItem } from "@/types/cart";
 import { MenuItem } from "@/types/menus";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 const Menus = () => {
   // State
@@ -17,7 +20,7 @@ const Menus = () => {
   const [activeCategory, setActiveCategory] = useState<string>("Semua");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
-
+  const dispatch = useDispatch()
   const router = useRouter();
 
   // Filter menu items
@@ -36,9 +39,7 @@ const Menus = () => {
       const existingItem = prevCart.find(cartItem => cartItem.id === item.id);
       if (existingItem) {
         return prevCart.map(cartItem =>
-          cartItem.id === item.id
-            ? { ...cartItem, quantity: cartItem.quantity + 1 }
-            : cartItem
+          cartItem.id === item.id ? { ...cartItem, quantity: cartItem.quantity + 1 } : cartItem
         );
       }
       return [...prevCart, { ...item, quantity: 1 }];
@@ -49,15 +50,6 @@ const Menus = () => {
     setCart(prevCart => prevCart.filter(item => item.id !== id));
   };
 
-  const updateQuantity = (id: number, newQuantity: number) => {
-    if (newQuantity < 1) return;
-    setCart(prevCart =>
-      prevCart.map(item =>
-        item.id === id ? { ...item, quantity: newQuantity } : item
-      )
-    );
-  };
-
   const updateNotes = (id: number, newNotes: string) => {
     setCart(prevCart =>
       prevCart.map(item =>
@@ -66,10 +58,17 @@ const Menus = () => {
     );
   };
 
-  // Calculate total
-  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const tax = subtotal * 0.1;
-  const total = subtotal + tax;
+  const onSubmitOrdered = () => {
+    if(cart.length === 0){
+      alert("Silahkan pesan makanan dahulu")
+    }
+    cart.map(item => dispatch(addItem(item)))
+    console.log("Order submitted:", {
+      items: cart,
+    });
+    // Add your order submission logic here
+    router.push("order-list")
+  }
 
   useEffect(() => {
     const fetchData = async () => {
@@ -86,7 +85,9 @@ const Menus = () => {
     fetchData()
   },[])
 
-console.log(menus)
+  const username = useSelector((state: RootState) => state.users.username)
+  const table = useSelector((state: RootState) => state.users.table)
+  console.log({cart})
   if(loading) return <Loading />
   if(error) return <div>Error: {error}</div>
 
@@ -144,7 +145,7 @@ console.log(menus)
                       }}
                     />
                   </div>
-                  <ButtonAddCart item={item} addToCart={addToCart}/>
+                  <ButtonAddCart item={item} addToCart={addToCart} cart={cart}/>
                 </div>
               ))}
             </div>
@@ -152,14 +153,23 @@ console.log(menus)
 
           {/* Cart Section (Right) */}
           <div className="lg:w-1/3 bg-white rounded-lg shadow-md p-4 h-fit sticky top-4">
-            <h2 className="text-xl font-bold mb-4 flex items-center">
-              <span className="mr-2">🛒</span> Keranjang
-              {cart.length > 0 && (
-                <span className="ml-2 bg-orange-500 text-white text-sm px-2 py-1 rounded-full">
-                  {cart.reduce((sum, item) => sum + item.quantity, 0)}
-                </span>
-              )}
-            </h2>
+          <div className="header flex items-center">
+              <h2 className="text-xl font-bold mb-4">
+                <span className="mr-2">🛒</span> Keranjang
+                {cart.length > 0 && (
+                  <span className="ml-2 bg-orange-500 text-white text-sm px-2 py-1 rounded-full">
+                    {cart.reduce((sum, item) => sum + item.quantity, 0)}
+                  </span>
+                )}
+               
+              </h2>
+              <div className="table ms-auto">
+                <h2 className="text-xl font-bold">
+                  <span className="ms-auto">{username}</span>
+                </h2> 
+              <p className="text-end">Meja {table}</p>
+              </div>
+          </div>
 
             {cart.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
@@ -184,23 +194,8 @@ console.log(menus)
                           {/* <p className="text-orange-600 font-bold">Rp {item.price.toLocaleString()}</p> */}
                           <div className="flex items-center mt-1">
                             <button
-                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                              className="w-8 h-8 bg-gray-200 rounded-l-md flex items-center justify-center"
-                            >
-                              -
-                            </button>
-                            <span className="w-10 h-8 bg-gray-100 flex items-center justify-center">
-                              {item.quantity}
-                            </span>
-                            <button
-                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                              className="w-8 h-8 bg-gray-200 rounded-r-md flex items-center justify-center"
-                            >
-                              +
-                            </button>
-                            <button
                               onClick={() => removeFromCart(item.id)}
-                              className="ml-2 text-red-500 hover:text-red-700"
+                              className="ml-2 text-red-500 hover:text-red-700 cursor-pointer"
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
@@ -222,32 +217,10 @@ console.log(menus)
                   ))}
                 </div>
 
-                {/* Global Notes */}
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Catatan Pesanan (Opsional)
-                  </label>
-                  <textarea
-                    placeholder="Contoh: Bungkus, Makan di tempat, Alamat pengiriman, dll"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    className="w-full p-3 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-orange-500"
-                    rows={3}
-                  />
-                </div>
-
-                <div className="mt-6 border-t border-gray-200 pt-4">
+                <div className="mt-2 pt-2">
                   <button 
                     className="mt-6 w-full bg-orange-500 text-white py-3 rounded-lg hover:bg-orange-600 transition-colors font-medium cursor-pointer"
-                    onClick={() => {
-                      console.log("Order submitted:", {
-                        items: cart,
-                        notes,
-                        total
-                      });
-                      // Add your order submission logic here
-                      router.push("order-list")
-                    }}
+                    onClick={onSubmitOrdered}
                   >
                     Lanjutkan Pemesanan
                   </button>
