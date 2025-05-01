@@ -73,7 +73,7 @@ const Menus = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const menus = await axios.get("http://localhost:3000/api/menus");
+        const menus = await axios.get("/api/menus");
         setMenus(menus.data.data)
       } catch (error: any) {
         setError(error.message)
