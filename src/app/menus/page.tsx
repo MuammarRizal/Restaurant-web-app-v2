@@ -10,6 +10,7 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { capitalizeEachWord } from "../utils/util";
 
 const Menus = () => {
   // State
@@ -19,9 +20,14 @@ const Menus = () => {
   const [error,setError] = useState(null)
   const [activeCategory, setActiveCategory] = useState<string>("Semua");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [notes, setNotes] = useState<string>("");
   const dispatch = useDispatch()
   const router = useRouter();
+
+  // get cart from local storage
+  // if(localStorage.getItem("cart")){
+  //   const cartLocalStorage = localStorage.getItem("cart")
+  //   setCart(JSON.parse(cartLocalStorage))
+  // }
 
   // Filter menu items
   const filteredItems = menus.filter(item => {
@@ -62,11 +68,10 @@ const Menus = () => {
     if(cart.length === 0){
       alert("Silahkan pesan makanan dahulu")
     }
-    cart.map(item => dispatch(addItem(item)))
-    console.log("Order submitted:", {
-      items: cart,
-    });
     // Add your order submission logic here
+    cart.map(item => dispatch(addItem(item)))
+    const cartStringify = JSON.stringify(cart)
+    localStorage.setItem("cart",cartStringify)
     router.push("order-list")
   }
 
@@ -87,7 +92,6 @@ const Menus = () => {
 
   const username = useSelector((state: RootState) => state.users.username)
   const table = useSelector((state: RootState) => state.users.table)
-  console.log({cart})
   if(loading) return <Loading />
   if(error) return <div>Error: {error}</div>
 
@@ -165,9 +169,12 @@ const Menus = () => {
               </h2>
               <div className="table ms-auto">
                 <h2 className="text-xl font-bold">
-                  <span className="ms-auto">{username}</span>
+                  <span className="ms-auto">{capitalizeEachWord(username)}</span>
                 </h2> 
-              <p className="text-end">Meja {table}</p>
+                
+              <p className="text-end">
+                {table !== "Take Away" ? `Meja ${table}` : table}
+              </p>
               </div>
           </div>
 

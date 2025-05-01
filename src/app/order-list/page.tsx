@@ -2,8 +2,9 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { CookingPot, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
+import { clearCart } from "@/features/cart/cartSlice";
 
 type OrderItem = {
   id: number;
@@ -16,8 +17,16 @@ type OrderItem = {
 
 const OrderTable = () => {
   const router = useRouter();
+  const dispatch = useDispatch();
   const { cart } = useSelector((state: RootState) => state);
-
+  const handleOrder = () => {
+    if(!confirm("Apa Pesanan Sudah Sesuai ?")){
+      return;
+    }
+    dispatch(clearCart());
+    router.push("/order-inprogress")
+  }
+  
   return (
     <div className="max-w-6xl mx-auto p-4">
       {/* Header Section */}
@@ -28,8 +37,8 @@ const OrderTable = () => {
         </h2>
         
         <button
-          onClick={() => router.push('/order-inprogress')}
-          className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+          onClick={handleOrder}
+          className="cursor-pointer flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
         >
           <span>Proses Pesanan</span>
           <ArrowRight className="w-4 h-4" />

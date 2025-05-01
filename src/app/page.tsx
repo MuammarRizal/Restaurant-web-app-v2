@@ -99,7 +99,7 @@ const Home = () => {
                         onClick={() => selectTable(table.table)}
                         disabled={!isAvailable}
                         className={`
-                          rounded-lg p-2 text-center transition-colors
+                          rounded-lg p-2 text-center transition-colors cursor-pointer
                           ${isLastItem ? 'col-span-2' : ''}
                           ${isAvailable
                             ? isTakeAway
@@ -124,7 +124,7 @@ const Home = () => {
 
             <button
               type="submit"
-              className="w-full rounded-lg bg-orange-600 py-3 font-medium text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+              className="cursor-pointer w-full rounded-lg bg-orange-600 py-3 font-medium text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
             >
               Ayo Cari Menu
             </button>
