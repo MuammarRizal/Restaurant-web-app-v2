@@ -1,5 +1,4 @@
 "use client";
-import { increment } from "@/features/counter/counterSlice";
 import { updateName, updateTable } from "@/features/user/userSlice";
 import { RootState } from "@/store/store";
 import { useRouter } from "next/navigation";
@@ -48,7 +47,6 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white py-10 px-4">
       <div className="mx-auto max-w-4xl">
-        <img src="/header.webp" alt="" />
         {/* Header Section */}
         <header className="mb-12 text-center">
           <h1 className="mb-4 text-4xl font-bold text-gray-800 sm:text-5xl md:text-6xl">

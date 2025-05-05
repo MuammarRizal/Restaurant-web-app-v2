@@ -69,8 +69,8 @@ const Menus = () => {
     if(cart.length === 0){
       alert("Silahkan pesan makanan dahulu")
     }
-    setLoading(true)
     // Add your order submission logic here
+    setLoading(true)
     cart.map(item => dispatch(addItem(item)))
     const cartStringify = JSON.stringify(cart)
     localStorage.setItem("cart",cartStringify)

@@ -11,7 +11,7 @@ type MenuItem = {
 
 export async function GET(request: NextRequest){
     const menus = await retrieveData("menus")
-
+    console.log({menus})
     return NextResponse.json({
         status: 200,
         message: "Success",
