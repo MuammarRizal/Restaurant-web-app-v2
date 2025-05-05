@@ -12,14 +12,15 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { capitalizeEachWord } from "../utils/util";
 
+
 const Menus = () => {
   // State
   const [cart, setCart] = useState<CartItem[]>([]);
   const [menus, setMenus] = useState<CartItem[]>([]);
-  const [loading,setLoading] = useState<boolean>(true);
   const [error,setError] = useState(null)
   const [activeCategory, setActiveCategory] = useState<string>("Semua");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [loading,setLoading] = useState<boolean>(false);
   const dispatch = useDispatch()
   const router = useRouter();
 
@@ -68,6 +69,7 @@ const Menus = () => {
     if(cart.length === 0){
       alert("Silahkan pesan makanan dahulu")
     }
+    setLoading(true)
     // Add your order submission logic here
     cart.map(item => dispatch(addItem(item)))
     const cartStringify = JSON.stringify(cart)
@@ -225,12 +227,20 @@ const Menus = () => {
                 </div>
 
                 <div className="mt-2 pt-2">
+                {loading ? (
                   <button 
-                    className="mt-6 w-full bg-orange-500 text-white py-3 rounded-lg hover:bg-orange-600 transition-colors font-medium cursor-pointer"
-                    onClick={onSubmitOrdered}
-                  >
-                    Lanjutkan Pemesanan
-                  </button>
+                  className="mt-6 w-full bg-slate-500 text-white py-3 rounded-lg hover:bg-slate-800 transition-colors font-medium cursor-progress"
+                >
+                  Tunggu Proses
+                </button>
+                ) : (
+                  <button 
+                  className="mt-6 w-full bg-orange-500 text-white py-3 rounded-lg hover:bg-orange-600 transition-colors font-medium cursor-pointer"
+                  onClick={onSubmitOrdered}
+                >
+                  Lanjutkan Pemesanan
+                </button>
+                )}
                 </div>
               </>
             )}
