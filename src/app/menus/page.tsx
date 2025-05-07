@@ -20,7 +20,8 @@ const Menus = () => {
   const [error,setError] = useState(null)
   const [activeCategory, setActiveCategory] = useState<string>("Semua");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [loading,setLoading] = useState<boolean>(false);
+  const [loading,setLoading] = useState<boolean>(true);
+  const [isOrderedLoading,setIsLoadingOrdered] = useState<boolean>(false)
   const dispatch = useDispatch()
   const router = useRouter();
 
@@ -70,7 +71,7 @@ const Menus = () => {
       alert("Silahkan pesan makanan dahulu")
     }
     // Add your order submission logic here
-    setLoading(true)
+    setIsLoadingOrdered(true)
     cart.map(item => dispatch(addItem(item)))
     const cartStringify = JSON.stringify(cart)
     localStorage.setItem("cart",cartStringify)
@@ -94,8 +95,8 @@ const Menus = () => {
 
   const username = useSelector((state: RootState) => state.users.username)
   const table = useSelector((state: RootState) => state.users.table)
-  if(loading) return <Loading />
-  if(error) return <div>Error: {error}</div>
+  // if(loading) return <Loading />
+  // if(error) return <div>Error: {error}</div>
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -115,7 +116,7 @@ const Menus = () => {
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
               <div className="flex space-x-2 overflow-x-auto pb-2 w-full">
                 <BackButton />
-                {categories.map(category => (
+                {!loading ? categories.map(category => (
                   <button
                     key={category}
                     onClick={() => setActiveCategory(category)}
@@ -127,7 +128,7 @@ const Menus = () => {
                   >
                     {category}
                   </button>
-                ))}
+                )) : "Loading ..."}
               </div>
               <input
                 type="text"
@@ -139,7 +140,7 @@ const Menus = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredItems.map(item => (
+              {!loading ? filteredItems.map(item => (
                 <div key={item.id} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
                   <div className="h-40 overflow-hidden">
                     <img 
@@ -153,7 +154,7 @@ const Menus = () => {
                   </div>
                   <ButtonAddCart item={item} addToCart={addToCart} cart={cart}/>
                 </div>
-              ))}
+              )) : <Loading />}
             </div>
           </div>
 
@@ -227,7 +228,7 @@ const Menus = () => {
                 </div>
 
                 <div className="mt-2 pt-2">
-                {loading ? (
+                {isOrderedLoading ? (
                   <button 
                   className="mt-6 w-full bg-slate-500 text-white py-3 rounded-lg hover:bg-slate-800 transition-colors font-medium cursor-progress"
                 >
@@ -238,7 +239,7 @@ const Menus = () => {
                   className="mt-6 w-full bg-orange-500 text-white py-3 rounded-lg hover:bg-orange-600 transition-colors font-medium cursor-pointer"
                   onClick={onSubmitOrdered}
                 >
-                  Lanjutkan Pemesanan
+                  {!isOrderedLoading ? "Lanjutkan Pemesanan" : "Loading ..."}
                 </button>
                 )}
                 </div>
