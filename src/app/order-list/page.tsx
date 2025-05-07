@@ -13,9 +13,11 @@ const OrderTable = () => {
   const { cart, users } = useSelector((state: RootState) => state);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editedNote, setEditedNote] = useState("");
-
+  const [loading, setloading] = useState<boolean>(false)
   const handleOrder = () => {
+    setloading(true)
     if (!confirm("Apakah pesanan sudah sesuai?")) {
+      setloading(false)
       return;
     }
     // dispatch(clearCart());
@@ -63,14 +65,23 @@ const OrderTable = () => {
           <div className="bg-orange-100 text-orange-800 px-3 py-2 rounded-lg">
             Total Item: <span className="font-bold">{totalItems}</span>
           </div>
-          <button
-            onClick={handleOrder}
-            disabled={cart.length === 0}
-            className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+          {loading ? (
+            <div
+            className="flex items-center gap-2 px-4 py-2 bg-slate-500 text-white rounded-lg hover:bg-slate-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
-            <span>Proses Pesanan</span>
+            <span>Mohon Tunggu ...</span>
             <ArrowRight className="w-4 h-4" />
-          </button>
+          </div>
+          ) : (
+            <button
+              onClick={handleOrder}
+              disabled={cart.length === 0}
+              className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+            >
+              <span>Proses Pesanan</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 

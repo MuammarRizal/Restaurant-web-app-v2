@@ -1,4 +1,5 @@
 "use client";
+import LoadingProgress from "@/components/LoadingProgress";
 import { updateName, updateTable } from "@/features/user/userSlice";
 import { RootState } from "@/store/store";
 import { useRouter } from "next/navigation";
@@ -13,6 +14,7 @@ type Table = {
 const Home = () => {
   const [isNameWarningOpen, setIsNameWarningOpen] = useState<boolean>(false);
   const [name, setName] = useState<string>("");
+  const [loading, setloading] = useState<boolean>(false)
   const [tableNumber, setTableNumber] = useState<string>("");
   const [showTableList, setShowTableList] = useState<boolean>(true);
   const [tables] = useState<Table[]>([
@@ -32,6 +34,7 @@ const Home = () => {
   };
 
   const handleSubmit = (e: React.FormEvent): void => {
+    setloading(true)
     e.preventDefault();
     if (!name || !tableNumber) {
       setIsNameWarningOpen(true);
@@ -121,12 +124,18 @@ const Home = () => {
               )}
             </div>
 
-            <button
-              type="submit"
-              className="cursor-pointer w-full rounded-lg bg-orange-600 py-3 font-medium text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
-            >
-              Ayo Cari Menu
-            </button>
+            {loading ? (
+              <div className="w-full h-10 rounded-lg py-3 font-medium text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+                  <LoadingProgress />
+              </div>
+            ) : (
+              <button
+                type="submit"
+                className="cursor-pointer w-full rounded-lg bg-orange-600 py-3 font-medium text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+              >
+                Ayo Cari Menu
+              </button>
+            )}
           </form>
         </div>
       </div>

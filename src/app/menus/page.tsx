@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { capitalizeEachWord } from "../utils/util";
+import LoadingProgress from "@/components/LoadingProgress";
 
 
 const Menus = () => {
@@ -229,11 +230,9 @@ const Menus = () => {
 
                 <div className="mt-2 pt-2">
                 {isOrderedLoading ? (
-                  <button 
-                  className="mt-6 w-full bg-slate-500 text-white py-3 rounded-lg hover:bg-slate-800 transition-colors font-medium cursor-progress"
-                >
-                  Tunggu Proses
-                </button>
+                 <div className="w-full h-10 rounded-lg py-3 font-medium text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+                    <LoadingProgress />
+                  </div>
                 ) : (
                   <button 
                   className="mt-6 w-full bg-orange-500 text-white py-3 rounded-lg hover:bg-orange-600 transition-colors font-medium cursor-pointer"
