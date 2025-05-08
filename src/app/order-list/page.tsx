@@ -17,6 +17,7 @@ const OrderTable = () => {
   const handleOrder = () => {
     setloading(true)
     if (!confirm("Apakah pesanan sudah sesuai?")) {
+      console.log({cart,users,})
       setloading(false)
       return;
     }
