@@ -1,7 +1,8 @@
 "use client";
+import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, Flame, CheckCircle, Truck, User, Utensils } from "lucide-react";
-import { useState } from "react";
+import { Clock, CheckCircle, Truck, Utensils, User } from "lucide-react";
+import { useEffect, useState } from "react";
 
 type FoodOrder = {
   id: string;
@@ -14,11 +15,13 @@ type FoodOrder = {
     quantity: number;
     notes?: string;
   }[];
-  status: "pending" | "cooking" | "ready" | "delivered";
+  status: "pending" | "ready" | "delivered";
   orderTime: Date;
 };
 
 const KitchenPage = () => {
+  const [isOrder,setisOrder] = useState(null);
+  const [cart,setCart] = useState(null)
   const [orders, setOrders] = useState<FoodOrder[]>([
     {
       id: "K-001",
@@ -40,7 +43,7 @@ const KitchenPage = () => {
       items: [
         { id: "3", name: "Ayam Bakar", quantity: 1, notes: "Extra crispy" }
       ],
-      status: "cooking",
+      status: "ready",
       orderTime: new Date(Date.now() - 1000 * 60 * 8) // 8 minutes ago
     },
     {
@@ -51,37 +54,42 @@ const KitchenPage = () => {
       items: [
         { id: "4", name: "Sate Kambing", quantity: 10 }
       ],
-      status: "ready",
-      orderTime: new Date(Date.now() - 1000 * 60 * 15) // 15 minutes ago
-    },
-    {
-      id: "K-004",
-      customerName: "Doni Pratama",
-      tableNumber: "D4",
-      foodImage: "https://img.freepik.com/free-photo/gado-gado-indonesian-food_141793-3464.jpg",
-      items: [
-        { id: "5", name: "Gado-Gado", quantity: 1, notes: "No peanut sauce" },
-        { id: "6", name: "Tempe Goreng", quantity: 2 }
-      ],
       status: "delivered",
       orderTime: new Date(Date.now() - 1000 * 60 * 25) // 25 minutes ago
     }
   ]);
 
-  // Action handlers
-  const startCooking = (id: string) => {
-    setOrders(orders.map(order => 
-      order.id === id ? { ...order, status: "cooking" } : order
-    ));
-  };
+  console.log("tataboga : ",{cart})
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const menus = await axios.get("/api/cart");
+        setCart(menus.data.data)
+      } catch (error: any) {
+        // setError(error.message)
+      }finally {
+        // setLoading(false)
+      }
+    }
 
+    fetchData()
+  },[])
+
+
+  // Action handlers
   const markAsReady = (id: string) => {
+    if(!confirm("Apa anda yakin ? ")){
+      return;
+    }
     setOrders(orders.map(order => 
       order.id === id ? { ...order, status: "ready" } : order
     ));
   };
 
   const markAsDelivered = (id: string) => {
+     if(!confirm("Apa anda yakin ? ")){
+      return;
+    }
     setOrders(orders.map(order => 
       order.id === id ? { ...order, status: "delivered" } : order
     ));
@@ -94,21 +102,19 @@ const KitchenPage = () => {
   // Status styling
   const statusStyles = {
     pending: "bg-yellow-100 text-yellow-800",
-    cooking: "bg-orange-100 text-orange-800",
     ready: "bg-blue-100 text-blue-800",
     delivered: "bg-green-100 text-green-800"
   };
 
   const statusIcons = {
     pending: <Clock className="w-4 h-4" />,
-    cooking: <Flame className="w-4 h-4" />,
     ready: <CheckCircle className="w-4 h-4" />,
     delivered: <Truck className="w-4 h-4" />
   };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
+      <div className="w-full mx-auto">
         {/* Header */}
         <div className="flex items-center mb-8">
           <Utensils className="w-8 h-8 text-orange-600 mr-3" />
@@ -116,7 +122,7 @@ const KitchenPage = () => {
         </div>
 
         {/* Order Columns */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Pending Orders */}
           <div className="bg-white rounded-xl shadow-md overflow-hidden border border-yellow-200">
             <div className="bg-yellow-500 px-4 py-3">
@@ -138,7 +144,7 @@ const KitchenPage = () => {
                     <div className="flex items-center mb-3">
                       <User className="w-5 h-5 text-gray-500 mr-2" />
                       <div>
-                        <h3 className="font-medium">{order.customerName}</h3>
+                        <h3 className="font-bold">{order.customerName}</h3>
                         <p className="text-sm text-gray-500">Meja {order.tableNumber}</p>
                       </div>
                     </div>
@@ -177,88 +183,15 @@ const KitchenPage = () => {
                     </ul>
 
                     <button
-                      onClick={() => startCooking(order.id)}
-                      className="w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition-colors text-sm"
+                      onClick={() => markAsReady(order.id)}
+                      className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm"
                     >
-                      Mulai Memasak
+                      Tandai Siap Antar
                     </button>
                   </motion.div>
                 ))}
               </AnimatePresence>
               {filteredOrders("pending").length === 0 && (
-                <div className="text-center text-gray-500 py-8">
-                  Tidak ada pesanan
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Cooking Orders */}
-          <div className="bg-white rounded-xl shadow-md overflow-hidden border border-orange-200">
-            <div className="bg-orange-500 px-4 py-3">
-              <h2 className="text-white font-semibold flex items-center">
-                <Flame className="mr-2" /> Sedang Dimasak ({filteredOrders("cooking").length})
-              </h2>
-            </div>
-            <div className="p-4 space-y-4 min-h-[400px]">
-              <AnimatePresence>
-                {filteredOrders("cooking").map(order => (
-                  <motion.div
-                    key={order.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                  >
-                    {/* Customer Info */}
-                    <div className="flex items-center mb-3">
-                      <User className="w-5 h-5 text-gray-500 mr-2" />
-                      <div>
-                        <h3 className="font-medium">{order.customerName}</h3>
-                        <p className="text-sm text-gray-500">Meja {order.tableNumber}</p>
-                      </div>
-                    </div>
-
-                    {/* Food Image */}
-                    <div className="w-full h-32 mb-3 rounded-lg overflow-hidden">
-                      <img 
-                        src={order.foodImage} 
-                        alt={order.items[0].name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-
-                    {/* Order Items */}
-                    <ul className="space-y-2 mb-3">
-                      {order.items.map(item => (
-                        <li key={item.id} className="text-sm">
-                          <div className="flex justify-between">
-                            <span>
-                              {item.quantity}x {item.name}
-                            </span>
-                            <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-                              {Math.floor((new Date().getTime() - order.orderTime.getTime()) / 60000)} mnt
-                            </span>
-                          </div>
-                          {item.notes && (
-                            <p className="text-xs text-gray-500 mt-1 bg-blue-50 p-2 rounded">
-                              📝 {item.notes}
-                            </p>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-
-                    <button
-                      onClick={() => markAsReady(order.id)}
-                      className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm"
-                    >
-                      Tandai Siap
-                    </button>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-              {filteredOrders("cooking").length === 0 && (
                 <div className="text-center text-gray-500 py-8">
                   Tidak ada pesanan
                 </div>
@@ -287,7 +220,7 @@ const KitchenPage = () => {
                     <div className="flex items-center mb-3">
                       <User className="w-5 h-5 text-gray-500 mr-2" />
                       <div>
-                        <h3 className="font-medium">{order.customerName}</h3>
+                        <h3 className="font-bold">{order.customerName}</h3>
                         <p className="text-sm text-gray-500">Meja {order.tableNumber}</p>
                       </div>
                     </div>
@@ -360,7 +293,7 @@ const KitchenPage = () => {
                     <div className="flex items-center mb-3">
                       <User className="w-5 h-5 text-gray-500 mr-2" />
                       <div>
-                        <h3 className="font-medium">{order.customerName}</h3>
+                        <h3 className="font-bold">{order.customerName}</h3>
                         <p className="text-sm text-gray-500">Meja {order.tableNumber}</p>
                       </div>
                     </div>

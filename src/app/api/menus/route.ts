@@ -6,9 +6,8 @@ type MenuItem = {
     price: number;
     category: string;
     image: string;
-  };
+};
   
-
 export async function GET(request: NextRequest){
     const menus = await retrieveData("menus")
     return NextResponse.json({

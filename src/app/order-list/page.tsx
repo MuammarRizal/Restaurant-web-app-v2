@@ -6,6 +6,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 // import { clearCart, removeFromCart } from "@/features/cart/cartSlice";
 import { useState } from "react";
+import { clearCart } from "@/features/cart/cartSlice";
+import axios from "axios";
 
 const OrderTable = () => {
   const router = useRouter();
@@ -14,15 +16,27 @@ const OrderTable = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editedNote, setEditedNote] = useState("");
   const [loading, setloading] = useState<boolean>(false)
-  const handleOrder = () => {
+  const handleOrder = async () => {
     setloading(true)
     if (!confirm("Apakah pesanan sudah sesuai?")) {
-      console.log({cart,users,})
+      console.log("Order List :",{cart,users})
       setloading(false)
       return;
     }
-    // dispatch(clearCart());
-    router.push("/order-inprogress");
+
+    try{
+      // console.log("cart:",{cart,users})
+      const response = await axios.post("/api/cart",{cart: cart, user: users})
+      if(response.statusText !== "OK" ){
+        throw new Error('Something went wrong');
+      }
+
+      alert("Data berhasil ditambahkan")
+      dispatch(clearCart());
+      router.push("/order-inprogress");
+    }catch(error){
+      console.log(error)
+    }
   };
 
   const startEditing = (id: number, currentNote: string) => {
@@ -77,7 +91,7 @@ const OrderTable = () => {
             <button
               onClick={handleOrder}
               disabled={cart.length === 0}
-              className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+              className="flex cursor-pointer items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
               <span>Proses Pesanan</span>
               <ArrowRight className="w-4 h-4" />

@@ -2,6 +2,7 @@ import { addDoc, collection, doc, getDoc, getDocs, getFirestore } from "firebase
 import app from './init'
 import { getDatabase } from "firebase/database";
 import { CartItem } from "@/types/cart";
+import { User } from "@/types/user";
 
 const firestore = getFirestore(app);
 const realtimeDb = getDatabase(app)
@@ -15,14 +16,14 @@ export async function retrieveData(collectionName: string){
     return data;
 }
 
-export async function retrieveDataById(collectionName: string, id: string){
+export async function retrieveDataMenusById(collectionName: string, id: string){
     const snapshot = await getDoc(doc(firestore, collectionName, id))
     const data = snapshot.data()
     return data 
 }
 
-export async function addDataFirebase(payload: CartItem) {
-    const docRef = await addDoc(collection(firestore,"carts"),{
+export async function addDataFirebase(collectionName: string, payload: {cart: CartItem, user: User}) {
+    const docRef = await addDoc(collection(firestore,collectionName),{
         ...payload,
         createdAt: new Date()
     })
