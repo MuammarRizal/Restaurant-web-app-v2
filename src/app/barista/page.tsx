@@ -73,7 +73,7 @@ const BaristaPage = () => {
   };
 
   // Filter drink items by status
-  const getDrinkItemsByStatus = (status: string) => {
+   const getDrinkItemsByStatus = (status: string) => {
     const items: { order: Order; item: DrinkItem }[] = [];
     
     orders.forEach(order => {
@@ -84,7 +84,8 @@ const BaristaPage = () => {
       });
     });
     
-    return items;
+    // Sort by createdAt timestamp (newest first)
+    return items.sort((a, b) => b.order.createdAt.seconds - a.order.createdAt.seconds);
   };
 
   // Status styling

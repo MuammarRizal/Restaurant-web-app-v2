@@ -84,7 +84,7 @@ const KitchenPage = () => {
       });
     });
     
-    return items;
+    return items.sort((a, b) => b.order.createdAt.seconds - a.order.createdAt.seconds);
   };
 
   // Status styling
