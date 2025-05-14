@@ -1,8 +1,8 @@
 "use client";
-import axios from "axios";
+import useSWR from "swr";
 import { motion, AnimatePresence } from "framer-motion";
 import { Clock, CheckCircle, Utensils, Coffee, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 type CartItem = {
   id: string;
@@ -27,50 +27,66 @@ type Order = {
   };
 };
 
+// SWR fetcher function
+const fetcher = async (url: string) => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error("Gagal memuat data pesanan");
+  }
+  return response.json();
+};
+
 const CustomerOrderPage = () => {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Use SWR instead of useState and useEffect with polling
+  const { data, error, isLoading } = useSWR("/api/cart", fetcher, {
+    refreshInterval: 5000, // Revalidate every 5 seconds
+    revalidateOnFocus: true,
+    dedupingInterval: 2000
+  });
 
-  // Fetch data initially and set up polling
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await axios.get("/api/cart");
-        setOrders(response.data.data);
-      } catch (error: any) {
-        console.error("Error fetching orders:", error.message);
-        setError("Gagal memuat data pesanan. Silakan coba lagi.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
-
-  // Group orders by user (combine all items for same user)
+  // Group orders by user and find the first food image
   const groupOrdersByUser = () => {
-    const userOrders: Record<string, { order: Order; items: CartItem[] }> = {};
+    if (!data || !data.data) return [];
+    
+    const orders = data.data;
+    const userOrders: Record<string, { 
+      order: Order; 
+      items: CartItem[];
+      foodImage: string | null;
+      mostRecentTimestamp: number;
+    }> = {};
 
-    orders.forEach(order => {
+    orders.forEach((order: any) => {
       const username = order.user.username || "Pelanggan";
       if (!userOrders[username]) {
+        // Find first food item for image
+        const foodItem = order.cart.find((item: any) => item.category === "makanan");
+        
         userOrders[username] = {
           order: {
             ...order,
             cart: [] // We'll handle items separately
           },
-          items: []
+          items: [],
+          foodImage: foodItem?.image || null,
+          mostRecentTimestamp: order.createdAt.seconds
         };
+      } else if (order.createdAt.seconds > userOrders[username].mostRecentTimestamp) {
+        // Update timestamp if this order is more recent
+        userOrders[username].mostRecentTimestamp = order.createdAt.seconds;
       }
-      order.cart.forEach(item => {
+      
+      order.cart.forEach((item: any) => {
         userOrders[username].items.push(item);
+        // Update food image if we find one later
+        if (item.category === "makanan" && !userOrders[username].foodImage) {
+          userOrders[username].foodImage = item.image;
+        }
       });
     });
 
-    return Object.values(userOrders);
+    // Convert to array and sort by most recent timestamp
+    return Object.values(userOrders).sort((a, b) => b.mostRecentTimestamp - a.mostRecentTimestamp);
   };
 
   // Status configuration
@@ -117,7 +133,7 @@ const CustomerOrderPage = () => {
     );
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex flex-col items-center">
@@ -133,7 +149,7 @@ const CustomerOrderPage = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="bg-white p-6 rounded-lg shadow-md text-center max-w-md">
           <h2 className="text-xl font-bold text-red-600 mb-2">Terjadi Kesalahan</h2>
-          <p className="text-gray-700 mb-4">{error}</p>
+          <p className="text-gray-700 mb-4">{error.message}</p>
           <button
             onClick={() => window.location.reload()}
             className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 transition-colors"
@@ -169,9 +185,8 @@ const CustomerOrderPage = () => {
             
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               <AnimatePresence>
-                {getWaitingOrders().map(({ order, items }) => {
+                {getWaitingOrders().map(({ order, items, foodImage }) => {
                   const waitingItems = filterItemsByStatus(items, ["pending", "preparing"]);
-                  const firstItem = waitingItems[0];
                   
                   return (
                     <motion.div
@@ -194,13 +209,11 @@ const CustomerOrderPage = () => {
                       <div className="flex flex-col">
                         <div className="w-full h-24 rounded-md overflow-hidden mb-2">
                           <img
-                            src={firstItem.image}
-                            alt={firstItem.name}
+                            src={foodImage || "https://via.placeholder.com/300x200?text=Makanan"}
+                            alt="Makanan"
                             className="w-full h-full object-cover"
                             onError={(e) => {
-                              (e.target as HTMLImageElement).src = firstItem.category === "makanan" 
-                                ? "https://via.placeholder.com/300x200?text=Makanan" 
-                                : "https://via.placeholder.com/300x200?text=Minuman";
+                              (e.target as HTMLImageElement).src = "https://via.placeholder.com/300x200?text=Makanan";
                             }}
                           />
                         </div>
@@ -218,15 +231,9 @@ const CustomerOrderPage = () => {
                                   </span>
                                   <span>
                                     {item.quantity}x {item.name}
-                                    {item.notes ? (
-                                      <p className="text-xs text-gray-500 mt-1 bg-blue-50 p-2 rounded">
-                                        📝 {item.notes}
-                                      </p>
-                                    ) : (
-                                      <p className="text-xs text-gray-500 mt-1 bg-blue-50 p-2 rounded">
-                                        📝 Tidak ada catatan
-                                      </p>
-                                    )}
+                                    <p className="text-xs text-gray-500 mt-1 bg-blue-50 p-2 rounded">
+                                      📝 {item.notes || "Tidak ada catatan"}
+                                    </p>
                                   </span>
                                 </div>
                               </li>
@@ -264,9 +271,8 @@ const CustomerOrderPage = () => {
             
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               <AnimatePresence>
-                {getCompletedOrders().map(({ order, items }) => {
+                {getCompletedOrders().map(({ order, items, foodImage }) => {
                   const completedItems = filterItemsByStatus(items, ["ready", "delivered"]);
-                  const firstItem = completedItems[0];
                   
                   return (
                     <motion.div
@@ -289,8 +295,8 @@ const CustomerOrderPage = () => {
                       <div className="flex flex-col">
                         <div className="w-full h-24 rounded-md overflow-hidden mb-2">
                           <img
-                            src={firstItem.image}
-                            alt={firstItem.name}
+                            src={foodImage || "https://via.placeholder.com/300x200?text=Makanan"}
+                            alt="Makanan"
                             className="w-full h-full object-cover"
                           />
                         </div>
@@ -308,15 +314,9 @@ const CustomerOrderPage = () => {
                                   </span>
                                   <span>
                                     {item.quantity}x {item.name}
-                                    {item.notes ? (
-                                      <p className="text-xs text-gray-500 mt-1 bg-blue-50 p-2 rounded">
-                                        📝 {item.notes}
-                                      </p>
-                                    ) : (
-                                      <p className="text-xs text-gray-500 mt-1 bg-blue-50 p-2 rounded">
-                                        📝 Tidak ada catatan
-                                      </p>
-                                    )}
+                                    <p className="text-xs text-gray-500 mt-1 bg-blue-50 p-2 rounded">
+                                      📝 {item.notes || "Tidak ada catatan"}
+                                    </p>
                                   </span>
                                 </div>
                               </li>
