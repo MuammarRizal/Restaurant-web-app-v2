@@ -21,7 +21,7 @@ const OrderTable = () => {
     try{
       // console.log("cart:",{cart,users})
       const response = await axios.post("/api/cart",{cart: cart, user: users})
-      if(response.statusText !== "OK" ){
+      if(response.status !== 200 ){
         console.log("response:",{response})
         console.log("response:",{status: response.status})
         alert("Ada yang salah nih servernya")
