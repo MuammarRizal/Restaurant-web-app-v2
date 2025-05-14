@@ -18,16 +18,11 @@ const OrderTable = () => {
   const [loading, setloading] = useState<boolean>(false)
   const handleOrder = async () => {
     setloading(true)
-    if (!confirm("Apakah pesanan sudah sesuai?")) {
-      console.log("Order List :",{cart,users})
-      setloading(false)
-      return;
-    }
-
     try{
       // console.log("cart:",{cart,users})
       const response = await axios.post("/api/cart",{cart: cart, user: users})
       if(response.statusText !== "OK" ){
+        alert("Ada yang salah nih servernya")
         throw new Error('Something went wrong');
       }
 
