@@ -1,7 +1,7 @@
 "use client";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, Coffee, CheckCircle, Truck, User, Loader2 } from "lucide-react";
+import { Clock, CheckCircle, Truck, Coffee, User, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type DrinkItem = {
@@ -11,7 +11,7 @@ type DrinkItem = {
   notes?: string;
   image: string;
   category: string;
-  status: "pending" | "preparing" | "ready" | "delivered";
+  status: "pending" | "ready" | "delivered";
 };
 
 type Order = {
@@ -51,7 +51,7 @@ const BaristaPage = () => {
   }, []);
 
   // Action handlers
-  const updateItemStatus = (orderId: string, itemId: string, newStatus: "pending" | "preparing" | "ready" | "delivered") => {
+  const updateItemStatus = (orderId: string, itemId: string, newStatus: "pending" | "ready" | "delivered") => {
     if (!confirm("Apa anda yakin?")) {
       return;
     }
@@ -90,23 +90,14 @@ const BaristaPage = () => {
   // Status styling
   const statusStyles = {
     pending: "bg-yellow-100 text-yellow-800",
-    preparing: "bg-orange-100 text-orange-800",
     ready: "bg-blue-100 text-blue-800",
     delivered: "bg-green-100 text-green-800"
   };
 
   const statusIcons = {
     pending: <Clock className="w-4 h-4" />,
-    preparing: <Coffee className="w-4 h-4" />,
     ready: <CheckCircle className="w-4 h-4" />,
     delivered: <Truck className="w-4 h-4" />
-  };
-
-  const statusLabels = {
-    pending: "Menunggu",
-    preparing: "Sedang dibuat",
-    ready: "Siap diantar",
-    delivered: "Sudah diantar"
   };
 
   // Calculate minutes since order was created
@@ -153,7 +144,7 @@ const BaristaPage = () => {
         </div>
 
         {/* Order Columns */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Pending Orders */}
           <div className="bg-white rounded-xl shadow-md overflow-hidden border border-yellow-200">
             <div className="bg-yellow-500 px-4 py-3">
@@ -212,86 +203,15 @@ const BaristaPage = () => {
                     </div>
 
                     <button
-                      onClick={() => updateItemStatus(order.id, item.id, "preparing")}
-                      className="w-full bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600 transition-colors text-sm"
+                      onClick={() => updateItemStatus(order.id, item.id, "ready")}
+                      className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm"
                     >
-                      Mulai Membuat
+                      Tandai Siap Antar
                     </button>
                   </motion.div>
                 ))}
               </AnimatePresence>
               {getDrinkItemsByStatus("pending").length === 0 && (
-                <div className="text-center text-gray-500 py-8">
-                  Tidak ada pesanan minuman
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Preparing Orders */}
-          <div className="bg-white rounded-xl shadow-md overflow-hidden border border-orange-200">
-            <div className="bg-orange-500 px-4 py-3">
-              <h2 className="text-white font-semibold flex items-center">
-                <Coffee className="mr-2" /> Sedang Dibuat ({getDrinkItemsByStatus("preparing").length})
-              </h2>
-            </div>
-            <div className="p-4 space-y-4 min-h-[400px]">
-              <AnimatePresence>
-                {getDrinkItemsByStatus("preparing").map(({ order, item }) => (
-                  <motion.div
-                    key={`${order.id}-${item.id}`}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                  >
-                    {/* Customer Info */}
-                    <div className="flex items-center mb-3">
-                      <User className="w-5 h-5 text-gray-500 mr-2" />
-                      <div>
-                        <h3 className="font-bold">{order.user.username || "Pelanggan"}</h3>
-                        <p className="text-sm text-gray-500">
-                          {order.user.table ? `Meja ${order.user.table}` : "Take Away"}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Drink Image */}
-                    <div className="w-full h-32 mb-3 rounded-lg overflow-hidden">
-                      <img 
-                        src={item.image} 
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-
-                    {/* Order Item */}
-                    <div className="text-sm mb-3">
-                      <div className="flex justify-between">
-                        <span>
-                          {item.quantity}x {item.name}
-                        </span>
-                        <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-                          {getMinutesSince(order.createdAt.seconds)} mnt
-                        </span>
-                      </div>
-                      {item.notes && (
-                        <p className="text-xs text-gray-500 mt-1 bg-blue-50 p-2 rounded">
-                          📝 {item.notes}
-                        </p>
-                      )}
-                    </div>
-
-                    <button
-                      onClick={() => updateItemStatus(order.id, item.id, "ready")}
-                      className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm"
-                    >
-                      Tandai Siap
-                    </button>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-              {getDrinkItemsByStatus("preparing").length === 0 && (
                 <div className="text-center text-gray-500 py-8">
                   Tidak ada pesanan minuman
                 </div>
