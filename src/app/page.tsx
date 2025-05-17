@@ -19,7 +19,7 @@ const Home = () => {
   const [showTableList, setShowTableList] = useState<boolean>(true);
   const [tables] = useState<Table[]>([
     { table: "1", status: "available" },
-    { table: "2", status: "occupied" },
+    { table: "2", status: "available" },
     { table: "3", status: "available" },
     { table: "4", status: "available" },
     { table: "Take Away", status: "available"}
@@ -27,6 +27,11 @@ const Home = () => {
   const dispatch = useDispatch()
   const router = useRouter();
 
+  if(!localStorage.getItem("qr_code")){
+    alert("Silahkan Scan QR Dahulu")
+    router.push("/validation")
+    return;
+  }
   const closeNameWarning = (): void => setIsNameWarningOpen(false);
 
   const selectTable = (tableNum: string): void => {
