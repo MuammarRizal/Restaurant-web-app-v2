@@ -18,30 +18,38 @@ const QrScannerPage = () => {
   ]
 
   const handleScanResult = (result: any) => {
-  // Pastikan result ada dan memiliki struktur yang diharapkan
+  // Validate the result structure
   if (!result || !Array.isArray(result) || result.length === 0 || !result[0]?.rawValue) {
-    console.log('Hasil scan tidak valid', result);
+    console.log('Invalid scan result', result);
     return;
   }
 
   const scannedValue = result[0].rawValue;
-  console.log('Hasil scan:', scannedValue);
+  console.log('Scanned value:', scannedValue);
 
-  // Cek apakah hasil scan adalah angka antara 1-100
+  // Check for special string case first
+  if (scannedValue === "PPKDJS-Collaboration-Day") {
+    setResult(scannedValue);
+    setIsScanning(false);
+    console.log('Scan successful - Special code accepted:', scannedValue);
+    return;
+  }
+
+  // Check if it's a number between 1-100
   if (/^[1-9][0-9]?$|^100$/.test(scannedValue)) {
     const numericValue = parseInt(scannedValue, 10);
     
     if (numericValue >= 1 && numericValue <= 100) {
       setResult(numericValue);
       setIsScanning(false);
-      console.log('Scan berhasil - Nilai valid:', numericValue);
+      console.log('Scan successful - Valid number:', numericValue);
       return;
     }
   }
 
-  console.log('Nilai tidak valid (harus 1-100):', scannedValue);
-  // Optional: Tampilkan pesan error ke user
-  // setError('Harap scan QR code dengan angka 1-100');
+  console.log('Invalid value (must be 1-100 or special code):', scannedValue);
+  // Optional: Show error to user
+  // setError('Please scan a QR code with number 1-100 or the special code');
 };
 
   return (
