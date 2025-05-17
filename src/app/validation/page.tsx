@@ -5,7 +5,7 @@ import { FaCamera, FaCheckCircle, FaTimesCircle } from 'react-icons/fa'
 import { ScannerError } from '@/types/scanner'
 
 const QrScannerPage = () => {
-  const [result, setResult] = useState<string | null>(null)
+  const [result, setResult] = useState<string | null | number>(null)
   const [error, setError] = useState<string | null>(null)
   const [isScanning, setIsScanning] = useState(true)
 
@@ -17,9 +17,32 @@ const QrScannerPage = () => {
     'data_matrix'
   ]
 
-  const onHandleScanner = (e: any) => {
-    alert("berhasil : ")
+  const handleScanResult = (result: any) => {
+  // Pastikan result ada dan memiliki struktur yang diharapkan
+  if (!result || !Array.isArray(result) || result.length === 0 || !result[0]?.rawValue) {
+    console.log('Hasil scan tidak valid', result);
+    return;
   }
+
+  const scannedValue = result[0].rawValue;
+  console.log('Hasil scan:', scannedValue);
+
+  // Cek apakah hasil scan adalah angka antara 1-100
+  if (/^[1-9][0-9]?$|^100$/.test(scannedValue)) {
+    const numericValue = parseInt(scannedValue, 10);
+    
+    if (numericValue >= 1 && numericValue <= 100) {
+      setResult(numericValue);
+      setIsScanning(false);
+      console.log('Scan berhasil - Nilai valid:', numericValue);
+      return;
+    }
+  }
+
+  console.log('Nilai tidak valid (harus 1-100):', scannedValue);
+  // Optional: Tampilkan pesan error ke user
+  // setError('Harap scan QR code dengan angka 1-100');
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex flex-col items-center justify-center p-4">
@@ -35,17 +58,19 @@ const QrScannerPage = () => {
           {isScanning ? (
             <div className="relative aspect-square w-full rounded-lg overflow-hidden border-2 border-dashed border-blue-300">
               <Scanner
-                onScan={(result) => {
-                  if (result?.[0]?.rawValue) {
-                    setResult(result[0].rawValue)
-                    setIsScanning(false)
-                  }
-                  console.log(result)
-                }}
+                // onScan={(result) => {
+                //   if ( result?.[0]?.rawValue) {
+                //     setResult(result[0].rawValue)
+                //     setIsScanning(false)
+                //   }
+                //   console.log(result)
+                // }}
+                onScan={handleScanResult}
                 onError={(error: any):void => {
                   setError(error?.message || 'Gagal memindai')
                   setIsScanning(false)
                 }}
+                allowMultiple={true}
                 formats={[ 'qr_code','code_128','code_39','data_matrix']}
                 // options={{
                 //   delayBetweenScanAttempts: 500,
