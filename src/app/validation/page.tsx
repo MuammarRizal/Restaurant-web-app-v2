@@ -3,11 +3,13 @@ import { useState } from 'react'
 import { Scanner } from '@yudiel/react-qr-scanner'
 import { FaCamera, FaCheckCircle, FaTimesCircle } from 'react-icons/fa'
 import { ScannerError } from '@/types/scanner'
+import { useRouter } from 'next/navigation'
 
 const QrScannerPage = () => {
   const [result, setResult] = useState<string | null | number>(null)
   const [error, setError] = useState<string | null>(null)
   const [isScanning, setIsScanning] = useState(true)
+  const router = useRouter()
 
   // Format yang didukung
   const formats = [
@@ -32,6 +34,8 @@ const QrScannerPage = () => {
     setResult(scannedValue);
     setIsScanning(false);
     console.log('Scan successful - Special code accepted:', scannedValue);
+    localStorage.setItem("qr_code",JSON.stringify(scannedValue));
+    router.push('/')
     return;
   }
 
@@ -43,6 +47,8 @@ const QrScannerPage = () => {
       setResult(numericValue);
       setIsScanning(false);
       console.log('Scan successful - Valid number:', numericValue);
+      localStorage.setItem("qr_code",JSON.stringify(numericValue));
+      router.push('/')
       return;
     }
   }
@@ -66,13 +72,6 @@ const QrScannerPage = () => {
           {isScanning ? (
             <div className="relative aspect-square w-full rounded-lg overflow-hidden border-2 border-dashed border-blue-300">
               <Scanner
-                // onScan={(result) => {
-                //   if ( result?.[0]?.rawValue) {
-                //     setResult(result[0].rawValue)
-                //     setIsScanning(false)
-                //   }
-                //   console.log(result)
-                // }}
                 onScan={handleScanResult}
                 onError={(error: any):void => {
                   setError(error?.message || 'Gagal memindai')
@@ -85,7 +84,7 @@ const QrScannerPage = () => {
                 //   maxScansPerSecond: 5,
                 // }}
                 components={{
-                  audio: false, // Matikan suara beep
+                  audio: true,
                 }}
                 classNames={{
                   container: 'w-full h-full',
