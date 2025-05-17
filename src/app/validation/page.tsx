@@ -17,6 +17,10 @@ const QrScannerPage = () => {
     'data_matrix'
   ]
 
+  const onHandleScanner = (e: any) => {
+    alert("berhasil : ")
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-xl shadow-lg overflow-hidden">
@@ -36,6 +40,7 @@ const QrScannerPage = () => {
                     setResult(result[0].rawValue)
                     setIsScanning(false)
                   }
+                  console.log(result)
                 }}
                 onError={(error: any):void => {
                   setError(error?.message || 'Gagal memindai')

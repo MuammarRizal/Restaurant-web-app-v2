@@ -1,5 +1,5 @@
 "use client";
-import axios from "axios";
+import useSWR from "swr";
 import { motion, AnimatePresence } from "framer-motion";
 import { Clock, CheckCircle, Truck, Utensils, User, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -27,36 +27,38 @@ type Order = {
   };
 };
 
+// Fungsi fetcher untuk useSWR
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error('Gagal memuat data pesanan');
+  }
+  return res.json();
+};
+
 const KitchenPage = () => {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: ordersData, error, isLoading, mutate } = useSWR<{ data: Order[] }>('/api/cart', fetcher, {
+    refreshInterval: 5000, // Auto-refresh setiap 5 detik
+    revalidateOnFocus: true, // Revalidasi ketika window/tab mendapatkan focus
+  });
 
+  const [localOrders, setLocalOrders] = useState<Order[]>([]);
+
+  // Sync data dari SWR dengan state lokal
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await axios.get("/api/cart");
-        setOrders(response.data.data);
-      } catch (error: any) {
-        console.error("Error fetching orders:", error.message);
-        setError("Gagal memuat data pesanan. Silakan coba lagi.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
+    if (ordersData?.data) {
+      setLocalOrders(ordersData.data);
+    }
+  }, [ordersData]);
 
   // Action handlers
-  const updateItemStatus = (orderId: string, itemId: string, newStatus: "pending" | "ready" | "delivered") => {
+  const updateItemStatus = async (orderId: string, itemId: string, newStatus: "pending" | "ready" | "delivered") => {
     if (!confirm("Apa anda yakin?")) {
       return;
     }
     
-    setOrders(orders.map(order => {
+    // Optimistic UI update
+    const updatedOrders = localOrders.map(order => {
       if (order.id === orderId) {
         return {
           ...order,
@@ -69,14 +71,35 @@ const KitchenPage = () => {
         };
       }
       return order;
-    }));
+    });
+    
+    setLocalOrders(updatedOrders);
+    
+    try {
+      // Kirim perubahan ke server
+      await fetch(`/api/cart/${orderId}/items/${itemId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      
+      // Revalidasi data dari server
+      mutate();
+    } catch (err) {
+      console.error('Gagal memperbarui status:', err);
+      // Kembalikan ke state sebelumnya jika gagal
+      setLocalOrders(ordersData?.data || []);
+      alert('Gagal memperbarui status. Silakan coba lagi.');
+    }
   };
 
   // Filter orders by status and category (only makanan)
   const getFoodItemsByStatus = (status: string) => {
     const items: { order: Order; item: CartItem }[] = [];
     
-    orders.forEach(order => {
+    localOrders.forEach(order => {
       order.cart.forEach(item => {
         if (item.status === status && item.category === "makanan") {
           items.push({ order, item });
@@ -106,7 +129,7 @@ const KitchenPage = () => {
     return Math.floor((now - seconds) / 60);
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex flex-col items-center">
@@ -122,9 +145,9 @@ const KitchenPage = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="bg-white p-6 rounded-lg shadow-md text-center max-w-md">
           <h2 className="text-xl font-bold text-red-600 mb-2">Terjadi Kesalahan</h2>
-          <p className="text-gray-700 mb-4">{error}</p>
+          <p className="text-gray-700 mb-4">{error.message}</p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => mutate()}
             className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 transition-colors"
           >
             Coba Lagi
