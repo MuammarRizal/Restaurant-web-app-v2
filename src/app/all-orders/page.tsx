@@ -1,6 +1,6 @@
 "use client";
 import useSWR from "swr";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, number } from "framer-motion";
 import { Clock, CheckCircle, Utensils, Coffee, Loader2 } from "lucide-react";
 import { useState } from "react";
 
@@ -44,6 +44,7 @@ const CustomerOrderPage = () => {
     dedupingInterval: 2000
   });
 
+  console.log(data)
   // Group orders by user and find the first food image
   const groupOrdersByUser = () => {
     if (!data || !data.data) return [];
@@ -198,9 +199,9 @@ const CustomerOrderPage = () => {
                     >
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <h3 className="font-medium text-sm">#{order.id.slice(0, 8)}</h3>
+                          <h3 className="font-medium text-sm">Order ID : <b>{order.id}</b></h3>
                           <p className="text-xs font-semibold text-gray-600">
-                            {order.user.username || "Pelanggan"} • {order.user.table || "Take Away"}
+                            {order?.user?.username || "Pelanggan"} • {order?.user?.table ? `Meja ${order.user.table}` : "Take Away"}
                           </p>
                         </div>
                         {statusConfig.waiting.icon}
