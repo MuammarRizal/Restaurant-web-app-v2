@@ -41,9 +41,8 @@ const QrScannerPage = () => {
   }
 
   // Check if it's a number between 1-100
-  if (/^[1-9][0-9]?$|^100$/.test(scannedValue)) {
-    const numericValue = parseInt(scannedValue.split('-')[2], 10)
-    
+  if (/^PPKD-JS-(?:[1-9][0-9]?|100)$/.test(scannedValue)) {
+    const numericValue = parseInt(scannedValue.split('-')[2], 10)  
     if (numericValue >= 1 && numericValue <= 100) {
       setResult(numericValue);
       setIsScanning(false);
