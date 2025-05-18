@@ -3,7 +3,7 @@ import LoadingProgress from "@/components/LoadingProgress";
 import { updateName, updateTable } from "@/features/user/userSlice";
 import { RootState } from "@/store/store";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 type Table = {
@@ -26,12 +26,7 @@ const Home = () => {
   ]);
   const dispatch = useDispatch()
   const router = useRouter();
-
-  if(!localStorage.getItem("qr_code")){
-    alert("Silahkan Scan QR Dahulu")
-    router.push("/validation")
-    return;
-  }
+ 
   const closeNameWarning = (): void => setIsNameWarningOpen(false);
 
   const selectTable = (tableNum: string): void => {
@@ -51,6 +46,15 @@ const Home = () => {
 
     router.push("/menus")
   };
+
+  useEffect(() => {
+    const storage = localStorage.getItem("qr_code");
+    if(!storage){
+      alert("Silahkan Scan QR Dahulu");
+      router.push("/validation");
+      return;
+    }
+  },[])
   const counterValue = useSelector(( state : RootState ) => state.counter.value)
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white py-10 px-4">
