@@ -17,7 +17,7 @@ export async function POST(request: NextRequest){
     const body = await request.json()
     const {code} = body
     const qr_code: qr_code[] = await retrieveData("qr_code")
-    console.log({qr_code})
+    console.log({code})
      
     const foundQrCodes = qr_code.filter((item: qr_code) => item.code === code);
     console.log({foundQrCodes})
@@ -27,6 +27,8 @@ export async function POST(request: NextRequest){
         status: 409, 
         message: "Data sudah pernah digunakan",
         data: foundQrCodes 
+      },{
+        status: 409
       });
     } else {
       const data = await addDataFirebase("qr_code",{code})

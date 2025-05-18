@@ -40,14 +40,21 @@ const QrScannerPage = () => {
     return;
   }
 
-  // Check if it's a number between 1-100
   if (/^PPKD-JS-(?:[1-9][0-9]?|100)$/.test(scannedValue)) {
     const numericValue = parseInt(scannedValue.split('-')[2], 10)  
     if (numericValue >= 1 && numericValue <= 100) {
       setResult(numericValue);
       setIsScanning(false);
       console.log('Scan successful - Valid number:', numericValue);
+
+      const responseData = (await axios.get("/api/qr_code"));
+      const isAvailable = responseData.data.data.map((qr: any) => qr.code === numericValue)
+
       try{
+        if(isAvailable){
+          console.log(isAvailable);
+          throw new Error("QR Sudah pernah digunakan")
+        }
         const response = await axios.post('/api/qr-code',{code: numericValue})
         console.log(response)
         if(response.status !== 200 ){
@@ -118,7 +125,7 @@ const QrScannerPage = () => {
               <FaCheckCircle className="text-green-500 text-xl mt-0.5" />
               <div>
                 <h3 className="font-semibold text-green-800">Berhasil!</h3>
-                <p className="text-sm break-all mt-1">{result}</p>
+                <p className="text-sm break-all mt-1">PPKD-JS-{result}</p>
               </div>
             </div>
           )}
