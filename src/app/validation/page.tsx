@@ -95,7 +95,7 @@ const QrScannerPage = () => {
         {/* Header */}
         <div className="bg-blue-600 p-5 text-center">
           <h1 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
-            <FaCamera className="inline" /> QR Code Scanner
+              <span className="text-orange-600">Collaboration Days</span>
           </h1>
         </div>
 

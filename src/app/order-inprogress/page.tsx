@@ -72,7 +72,7 @@ const OrderInProgress = () => {
           whileTap={{ scale: 0.95 }}
           onClick={() => {
             // router.push('/')
-            window.location.href = "https://collaboration-day-ppkd-js/validation"
+            window.location.href = "https://collaboration-day-ppkd-js.vercel.app/validation"
             localStorage.clear()
           }}
           className="cursor-pointer mt-6 flex items-center justify-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors mx-auto"
