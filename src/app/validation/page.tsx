@@ -1,83 +1,93 @@
 'use client'
 import { useState } from 'react'
 import { Scanner } from '@yudiel/react-qr-scanner'
-import { FaCamera, FaCheckCircle, FaTimesCircle } from 'react-icons/fa'
-import { ScannerError } from '@/types/scanner'
+import { FaCamera, FaCheckCircle, FaTimesCircle, FaSpinner } from 'react-icons/fa'
 import { useRouter } from 'next/navigation'
 import axios from 'axios'
 
 const QrScannerPage = () => {
-  const [result, setResult] = useState<string | null | number>(null)
+  const [result, setResult] = useState<string | number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isScanning, setIsScanning] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  // Format yang didukung
-  const formats = [
-    'qr_code',
-    'code_128',
-    'code_39',
-    'data_matrix'
-  ]
-
   const handleScanResult = async (result: any) => {
-  // Validate the result structure
-  if (!result || !Array.isArray(result) || result.length === 0 || !result[0]?.rawValue) {
-    console.log('Invalid scan result', result);
-    return;
-  }
+    if (!result || !Array.isArray(result) || result.length === 0 || !result[0]?.rawValue) {
+      console.log('Invalid scan result', result)
+      return
+    }
 
-  const scannedValue = result[0].rawValue;
-  console.log('Scanned value:', scannedValue);
+    const scannedValue = result[0].rawValue
+    console.log('Scanned value:', scannedValue)
+    setIsLoading(true)
 
-  // Check for special string case first
-  if (scannedValue === "PPKDJS-Collaboration-Day") {
-    setResult(scannedValue);
-    setIsScanning(false);
-    console.log('Scan successful - Special code accepted:', scannedValue);
-    localStorage.setItem("qr_code",JSON.stringify(scannedValue));
-    router.push('/')
-    return;
-  }
-
-  if (/^PPKD-JS-(?:[1-9][0-9]?|100)$/.test(scannedValue)) {
-    const numericValue = parseInt(scannedValue.split('-')[2], 10)  
-    if (numericValue >= 1 && numericValue <= 100) {
-      setIsScanning(false);
-      console.log('Scan successful - Valid number:', numericValue);
-
-      // const responseData = (await axios.get("/api/qr_code"));
-      // const isAvailable = responseData.data.data.map((qr: any) => qr.code === numericValue)
-
-      try{
-        // if(isAvailable){
-        //   console.log(isAvailable);
-        //   throw new Error("QR Sudah pernah digunakan")
-        // }
-        const response = await axios.post('/api/qr-code',{code: numericValue})
-        console.log(response)
-        if(response.status !== 200 ){
-            console.log("response:",{response})
-            console.log("response:",{status: response.status})
-            alert("QR Sudah Pernah Digunakan")
-            setError("QR Sudah Digunakan")
-            throw new Error('Something went wrong');
-            return;
-        }
-        localStorage.setItem("qr_code",JSON.stringify(numericValue));
-        setResult(numericValue);
-        router.push('/')
-        return;
-      }catch(err){
-        console.log(err)
+    try {
+      // Handle special code case
+      if (scannedValue === "PPKDJS-Collaboration-Day") {
+        await handleValidCode(scannedValue)
+        return
       }
+
+      // Handle PPKD-JS-xxx format
+      if (/^PPKD-JS-(?:[1-9][0-9]?|100)$/.test(scannedValue)) {
+        const numericValue = parseInt(scannedValue.split('-')[2], 10)
+        if (numericValue >= 1 && numericValue <= 100) {
+          await handleNumericCode(numericValue)
+          return
+        }
+      }
+
+      // If we get here, the code is invalid
+      setError('Kode QR tidak valid. Harus berupa PPKD-JS-1 sampai PPKD-JS-100 atau kode khusus')
+      setIsScanning(false)
+    } catch (err) {
+      console.error('Error processing QR code:', err)
+      setError(err instanceof Error ? err.message : 'Terjadi kesalahan saat memproses QR code')
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  console.log('Invalid value (must be 1-100 or special code):', scannedValue);
-  // Optional: Show error to user
-  // setError('Please scan a QR code with number 1-100 or the special code');
-};
+  const handleValidCode = async (code: string) => {
+    setResult(code)
+    setIsScanning(false)
+    console.log('Scan successful - Special code accepted:', code)
+    localStorage.setItem("qr_code", JSON.stringify(code))
+    router.push('/')
+  }
+
+  const handleNumericCode = async (code: number) => {
+    setIsScanning(false)
+    console.log('Scan successful - Valid number:', code)
+
+    try {
+      const response = await axios.post('/api/qr-code', { code })
+      
+      if (response.status !== 200) {
+        console.log("Response:", { status: response.status, data: response.data })
+        throw new Error("QR Sudah Pernah Digunakan")
+      }
+
+      localStorage.setItem("qr_code", JSON.stringify(code))
+      setResult(code)
+      router.push('/')
+    } catch (err) {
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || 'QR Sudah Pernah Digunakan')
+      } else {
+        setError(err instanceof Error ? err.message : 'Terjadi kesalahan')
+      }
+      setIsScanning(true) // Allow rescanning
+      throw err // Re-throw for the outer catch
+    }
+  }
+
+  const resetScanner = () => {
+    setResult(null)
+    setError(null)
+    setIsScanning(true)
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex flex-col items-center justify-center p-4">
@@ -90,23 +100,24 @@ const QrScannerPage = () => {
         </div>
 
         <div className="p-5">
-          {isScanning ? (
+          {isLoading ? (
+            <div className="aspect-square w-full rounded-lg flex items-center justify-center bg-gray-100">
+              <div className="flex flex-col items-center">
+                <FaSpinner className="text-blue-500 text-4xl animate-spin mb-2" />
+                <p className="text-gray-700">Memproses QR code...</p>
+              </div>
+            </div>
+          ) : isScanning ? (
             <div className="relative aspect-square w-full rounded-lg overflow-hidden border-2 border-dashed border-blue-300">
               <Scanner
                 onScan={handleScanResult}
-                onError={(error: any):void => {
+                onError={(error: any): void => {
                   setError(error?.message || 'Gagal memindai')
                   setIsScanning(false)
                 }}
                 allowMultiple={true}
-                formats={[ 'qr_code','code_128','code_39','data_matrix']}
-                // options={{
-                //   delayBetweenScanAttempts: 500,
-                //   maxScansPerSecond: 5,
-                // }}
-                components={{
-                  audio: true,
-                }}
+                formats={['qr_code', 'code_128', 'code_39', 'data_matrix']}
+                components={{ audio: true }}
                 classNames={{
                   container: 'w-full h-full',
                   video: 'object-cover',
@@ -121,18 +132,20 @@ const QrScannerPage = () => {
           )}
 
           {/* Hasil Scan */}
-          {result && (
+          {result && !isLoading && (
             <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
               <FaCheckCircle className="text-green-500 text-xl mt-0.5" />
               <div>
                 <h3 className="font-semibold text-green-800">Berhasil!</h3>
-                <p className="text-sm break-all mt-1">PPKD-JS-{result}</p>
+                <p className="text-sm break-all mt-1">
+                  {typeof result === 'number' ? `PPKD-JS-${result}` : result}
+                </p>
               </div>
             </div>
           )}
 
           {/* Error Message */}
-          {error && (
+          {error && !isLoading && (
             <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
               <FaTimesCircle className="text-red-500 text-xl mt-0.5" />
               <div>
@@ -145,22 +158,23 @@ const QrScannerPage = () => {
           {/* Action Buttons */}
           <div className="mt-6 flex gap-3">
             <button
-              onClick={() => {
-                setResult(null)
-                setError(null)
-                setIsScanning(true)
-              }}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
+              onClick={resetScanner}
+              disabled={isLoading}
+              className={`flex-1 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 ${
+                isLoading
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+              }`}
             >
               <FaCamera /> Scan Lagi
             </button>
             
-            {result && (
+            {result && !isLoading && (
               <button
-                onClick={() => alert(`Proses data: ${result}`)}
+                onClick={() => router.push('/')}
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg transition-colors"
               >
-                Proses Hasil
+                Lanjutkan
               </button>
             )}
           </div>
