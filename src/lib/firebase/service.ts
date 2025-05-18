@@ -23,7 +23,7 @@ export async function retrieveDataMenusById(collectionName: string, id: string){
     return data 
 }
 
-export async function addDataFirebase(collectionName: string, payload: {cart?: CartItem, user?: User, code?: number, id?: string}) {
+export async function addDataFirebase(collectionName: string, payload: {cart?: CartItem, user?: User, code?: number | string, id?: string}) {
     const docRef = await addDoc(collection(firestore,collectionName),{
         ...payload,
         id: +new Date(),
