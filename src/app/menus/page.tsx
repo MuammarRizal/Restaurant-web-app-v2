@@ -80,6 +80,12 @@ const Menus = () => {
   }
 
   useEffect(() => {
+    const storage = localStorage.getItem("qr_code");
+    if(!storage){
+      alert("Silahkan Scan QR Dahulu");
+      router.push("/validation");
+      return;
+    }
     const fetchData = async () => {
       try {
         const menus = await axios.get("/api/menus");
@@ -90,7 +96,6 @@ const Menus = () => {
         setLoading(false)
       }
     }
-
     fetchData()
   },[])
 

@@ -4,6 +4,7 @@ import { Scanner } from '@yudiel/react-qr-scanner'
 import { FaCamera, FaCheckCircle, FaTimesCircle } from 'react-icons/fa'
 import { ScannerError } from '@/types/scanner'
 import { useRouter } from 'next/navigation'
+import axios from 'axios'
 
 const QrScannerPage = () => {
   const [result, setResult] = useState<string | null | number>(null)
@@ -19,7 +20,7 @@ const QrScannerPage = () => {
     'data_matrix'
   ]
 
-  const handleScanResult = (result: any) => {
+  const handleScanResult = async (result: any) => {
   // Validate the result structure
   if (!result || !Array.isArray(result) || result.length === 0 || !result[0]?.rawValue) {
     console.log('Invalid scan result', result);
@@ -47,9 +48,22 @@ const QrScannerPage = () => {
       setResult(numericValue);
       setIsScanning(false);
       console.log('Scan successful - Valid number:', numericValue);
-      localStorage.setItem("qr_code",JSON.stringify(numericValue));
-      router.push('/')
-      return;
+      try{
+        const response = await axios.post('/api/qr-code',{code: numericValue})
+        console.log(response)
+        if(response.status !== 200 ){
+            console.log("response:",{response})
+            console.log("response:",{status: response.status})
+            alert("QR Sudah Pernah Digunakan")
+            throw new Error('Something went wrong');
+        }
+
+        localStorage.setItem("qr_code",JSON.stringify(numericValue));
+        router.push('/')
+        return;
+      }catch(err){
+        console.log(err)
+      }
     }
   }
 
