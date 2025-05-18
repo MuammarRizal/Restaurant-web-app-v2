@@ -43,28 +43,29 @@ const QrScannerPage = () => {
   if (/^PPKD-JS-(?:[1-9][0-9]?|100)$/.test(scannedValue)) {
     const numericValue = parseInt(scannedValue.split('-')[2], 10)  
     if (numericValue >= 1 && numericValue <= 100) {
-      setResult(numericValue);
       setIsScanning(false);
       console.log('Scan successful - Valid number:', numericValue);
 
-      const responseData = (await axios.get("/api/qr_code"));
-      const isAvailable = responseData.data.data.map((qr: any) => qr.code === numericValue)
+      // const responseData = (await axios.get("/api/qr_code"));
+      // const isAvailable = responseData.data.data.map((qr: any) => qr.code === numericValue)
 
       try{
-        if(isAvailable){
-          console.log(isAvailable);
-          throw new Error("QR Sudah pernah digunakan")
-        }
+        // if(isAvailable){
+        //   console.log(isAvailable);
+        //   throw new Error("QR Sudah pernah digunakan")
+        // }
         const response = await axios.post('/api/qr-code',{code: numericValue})
         console.log(response)
         if(response.status !== 200 ){
             console.log("response:",{response})
             console.log("response:",{status: response.status})
             alert("QR Sudah Pernah Digunakan")
+            setError("QR Sudah Digunakan")
             throw new Error('Something went wrong');
+            return;
         }
-
         localStorage.setItem("qr_code",JSON.stringify(numericValue));
+        setResult(numericValue);
         router.push('/')
         return;
       }catch(err){
