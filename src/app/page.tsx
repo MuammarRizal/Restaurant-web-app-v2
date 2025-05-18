@@ -74,7 +74,7 @@ const Home = () => {
           <form onSubmit={handleSubmit}>
             <div className="mb-6 text-center">
               <h2 className="text-2xl font-semibold text-gray-700">
-                Kode Anda: <span className="text-orange-600">PPKDJS</span>
+                <span className="text-orange-600">Collaboration Days</span>
               </h2>
               <p className="mt-2 text-gray-600">
                 👋 Halo, silahkan masukkan nama Anda:

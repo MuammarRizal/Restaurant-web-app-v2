@@ -150,7 +150,7 @@ const QrScannerPage = () => {
               <FaTimesCircle className="text-red-500 text-xl mt-0.5" />
               <div>
                 <h3 className="font-semibold text-red-800">Error</h3>
-                <p className="text-sm mt-1">{error}</p>
+                <p className="text-sm mt-1">QR Sudah Digunakan</p>
               </div>
             </div>
           )}
