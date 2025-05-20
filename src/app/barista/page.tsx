@@ -1,8 +1,9 @@
 "use client";
-import axios from "axios";
+import useSWR from "swr";
 import { motion, AnimatePresence } from "framer-motion";
 import { Clock, CheckCircle, Truck, Coffee, User, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import axios from "axios";
 
 type DrinkItem = {
   id: string;
@@ -31,10 +32,15 @@ type Order = {
 const LS_READY_DRINKS_KEY = "barista_ready_drinks";
 const LS_DELIVERED_DRINKS_KEY = "barista_delivered_drinks";
 
+// SWR fetcher function
+const fetcher = (url: string) => axios.get(url).then(res => res.data);
+
 const BaristaPage = () => {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, error, isLoading, mutate } = useSWR('/api/cart', fetcher, {
+    refreshInterval: 5000, // Refresh every 5 seconds
+    revalidateOnFocus: true,
+  });
+  
   const [persistedReadyItems, setPersistedReadyItems] = useState<{orderId: string, itemId: string}[]>([]);
   const [persistedDeliveredItems, setPersistedDeliveredItems] = useState<{orderId: string, itemId: string}[]>([]);
 
@@ -55,49 +61,36 @@ const BaristaPage = () => {
     }
   }, []);
 
-  // Fetch orders data and apply localStorage status
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await axios.get("/api/cart");
+  // Process orders data with localStorage status
+  const processOrders = (orders: Order[]) => {
+    if (!orders) return [];
+    
+    return orders.map(order => {
+      const processedCart = order.cart.map(item => {
+        // Cek apakah item ini ada di daftar ready yang tersimpan
+        const isReady = persistedReadyItems.some(
+          pi => pi.orderId === order.id && pi.itemId === item.id
+        );
         
-        // Apply stored statuses to fetched data
-        const processedOrders = JSON.parse(JSON.stringify(response.data.data)) as Order[];
+        // Cek apakah item ini ada di daftar delivered yang tersimpan
+        const isDelivered = persistedDeliveredItems.some(
+          pi => pi.orderId === order.id && pi.itemId === item.id
+        );
         
-        processedOrders.forEach(order => {
-          order.cart.forEach(item => {
-            // Cek apakah item ini ada di daftar ready yang tersimpan
-            const isReady = persistedReadyItems.some(
-              pi => pi.orderId === order.id && pi.itemId === item.id
-            );
-            
-            // Cek apakah item ini ada di daftar delivered yang tersimpan
-            const isDelivered = persistedDeliveredItems.some(
-              pi => pi.orderId === order.id && pi.itemId === item.id
-            );
-            
-            // Terapkan status berdasarkan prioritas (delivered > ready > original)
-            if (isDelivered) {
-              item.status = "delivered";
-            } else if (isReady) {
-              item.status = "ready";
-            }
-          });
-        });
-        
-        setOrders(processedOrders);
-      } catch (error: any) {
-        console.error("Error fetching orders:", error.message);
-        setError("Gagal memuat data pesanan. Silakan coba lagi.");
-      } finally {
-        setLoading(false);
-      }
-    };
+        // Terapkan status berdasarkan prioritas (delivered > ready > original)
+        if (isDelivered) {
+          return { ...item, status: "delivered" };
+        } else if (isReady) {
+          return { ...item, status: "ready" };
+        }
+        return item;
+      });
+      
+      return { ...order, cart: processedCart };
+    });
+  };
 
-    fetchData();
-  }, [persistedReadyItems, persistedDeliveredItems]);
+  const orders = processOrders(data?.data || []);
 
   // Action handlers dengan penyimpanan ke localStorage
   const updateItemStatus = async (orderId: string, itemId: string, newStatus: "pending" | "ready" | "delivered") => {
@@ -105,24 +98,8 @@ const BaristaPage = () => {
       return;
     }
     
-    // Update UI optimistically
-    setOrders(orders.map(order => {
-      if (order.id === orderId) {
-        return {
-          ...order,
-          cart: order.cart.map(item => {
-            if (item.id === itemId) {
-              return { ...item, status: newStatus };
-            }
-            return item;
-          })
-        };
-      }
-      return order;
-    }));
-    
     try {
-      // Save to localStorage based on status
+      // Update localStorage based on status
       if (newStatus === "ready") {
         const updatedReadyItems = [...persistedReadyItems, { orderId, itemId }];
         setPersistedReadyItems(updatedReadyItems);
@@ -133,14 +110,35 @@ const BaristaPage = () => {
         localStorage.setItem(LS_DELIVERED_DRINKS_KEY, JSON.stringify(updatedDeliveredItems));
       }
       
-      // Send to server
+      // Optimistically update the UI
+      mutate({
+        ...data,
+        data: data.data.map((order: Order) => {
+          if (order.id === orderId) {
+            return {
+              ...order,
+              cart: order.cart.map(item => {
+                if (item.id === itemId) {
+                  return { ...item, status: newStatus };
+                }
+                return item;
+              })
+            };
+          }
+          return order;
+        })
+      }, false); // Don't revalidate immediately
+      
+      // Send to server (uncomment when ready)
       // await axios.patch(`/api/cart/${orderId}/items/${itemId}`, {
       //   status: newStatus
       // });
+      
+      // Revalidate data
+      mutate();
     } catch (err) {
       console.error("Error updating item status:", err);
       alert("Gagal memperbarui status. Silakan coba lagi.");
-      // Could revert the optimistic update here
     }
   };
 
@@ -151,7 +149,7 @@ const BaristaPage = () => {
       localStorage.removeItem(LS_DELIVERED_DRINKS_KEY);
       setPersistedReadyItems([]);
       setPersistedDeliveredItems([]);
-      window.location.reload(); // Reload to get fresh data
+      mutate(); // Revalidate data
     }
   };
 
@@ -190,7 +188,7 @@ const BaristaPage = () => {
     return Math.floor((now - seconds) / 60);
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex flex-col items-center">
@@ -206,9 +204,9 @@ const BaristaPage = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="bg-white p-6 rounded-lg shadow-md text-center max-w-md">
           <h2 className="text-xl font-bold text-red-600 mb-2">Terjadi Kesalahan</h2>
-          <p className="text-gray-700 mb-4">{error}</p>
+          <p className="text-gray-700 mb-4">Gagal memuat data pesanan. Silakan coba lagi.</p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => mutate()}
             className="bg-brown-500 text-white px-4 py-2 rounded hover:bg-brown-600 transition-colors"
           >
             Coba Lagi
@@ -227,13 +225,13 @@ const BaristaPage = () => {
             <Coffee className="w-8 h-8 text-brown-600 mr-3" />
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Sistem Pesanan Minuman</h1>
           </div>
-          {/* <button
+          <button
             onClick={clearLocalStorage}
             className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded transition-colors"
             title="Reset data tersimpan di perangkat ini"
           >
             Reset Data Lokal
-          </button> */}
+          </button>
         </div>
 
         {/* Order Columns */}
