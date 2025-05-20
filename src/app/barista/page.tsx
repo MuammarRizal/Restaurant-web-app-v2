@@ -227,13 +227,13 @@ const BaristaPage = () => {
             <Coffee className="w-8 h-8 text-brown-600 mr-3" />
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Sistem Pesanan Minuman</h1>
           </div>
-          <button
+          {/* <button
             onClick={clearLocalStorage}
             className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded transition-colors"
             title="Reset data tersimpan di perangkat ini"
           >
             Reset Data Lokal
-          </button>
+          </button> */}
         </div>
 
         {/* Order Columns */}

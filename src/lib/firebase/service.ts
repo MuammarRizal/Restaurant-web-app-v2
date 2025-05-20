@@ -17,6 +17,40 @@ export async function retrieveData(collectionName: string){
     return data;
 }
 
+interface MenuItem {
+  id?: string;
+  name: string;
+  quantity: number;
+  category: "makanan" | "minuman";
+  image: string;
+  createdAt?: Date;
+}
+
+export async function addMenu(
+  collectionName: string = "menus",
+  menuData: Omit<MenuItem, "id" | "createdAt"> // Exclude these as they'll be auto-generated
+): Promise<string> {
+  try {
+    // Create a new document reference with auto-generated ID
+    const newDocRef = doc(collection(firestore, collectionName));
+    
+    // Prepare the complete menu data
+    const completeMenuData: MenuItem = {
+      ...menuData,
+
+      createdAt: new Date(),
+    };
+
+    // Add the document to Firestore
+    await setDoc(newDocRef, completeMenuData);
+    
+    return newDocRef.id;
+  } catch (error) {
+    console.error("Error adding menu:", error);
+    throw new Error("Failed to add menu");
+  }
+}
+
 export async function retrieveDataMenusById(collectionName: string, id: string){
     const snapshot = await getDoc(doc(firestore, collectionName, id))
     const data = snapshot.data()
