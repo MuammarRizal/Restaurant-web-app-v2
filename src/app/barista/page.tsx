@@ -157,8 +157,8 @@ const BaristaPage = () => {
   const getDrinkItemsByStatus = (status: string) => {
     const items: { order: Order; item: DrinkItem }[] = [];
     
-    orders.forEach(order => {
-      order.cart.forEach(item => {
+    orders.forEach((order: any) => {
+      order.cart.forEach((item: any) => {
         if (item.status === status && item.category === "minuman") {
           items.push({ order, item });
         }
