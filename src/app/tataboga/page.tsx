@@ -36,6 +36,10 @@ const fetcher = async (url: string) => {
   return res.json();
 };
 
+// Kunci untuk localStorage
+const LS_READY_ORDERS_KEY = "kitchen_ready_orders";
+const LS_DELIVERED_ORDERS_KEY = "kitchen_delivered_orders";
+
 const KitchenPage = () => {
   const { data: ordersData, error, isLoading, mutate } = useSWR<{ data: Order[] }>('/api/cart', fetcher, {
     refreshInterval: 5000, // Auto-refresh setiap 5 detik
@@ -43,13 +47,58 @@ const KitchenPage = () => {
   });
 
   const [localOrders, setLocalOrders] = useState<Order[]>([]);
+  const [persistedReadyItems, setPersistedReadyItems] = useState<{orderId: string, itemId: string}[]>([]);
+  const [persistedDeliveredItems, setPersistedDeliveredItems] = useState<{orderId: string, itemId: string}[]>([]);
 
-  // Sync data dari SWR dengan state lokal
+  // Load persisted items from localStorage on component mount
+  useEffect(() => {
+    try {
+      const savedReadyItems = localStorage.getItem(LS_READY_ORDERS_KEY);
+      if (savedReadyItems) {
+        setPersistedReadyItems(JSON.parse(savedReadyItems));
+      }
+      
+      const savedDeliveredItems = localStorage.getItem(LS_DELIVERED_ORDERS_KEY);
+      if (savedDeliveredItems) {
+        setPersistedDeliveredItems(JSON.parse(savedDeliveredItems));
+      }
+    } catch (err) {
+      console.error("Error loading data from localStorage:", err);
+    }
+  }, []);
+
+  // Sync data dari SWR dengan state lokal dan aplikasikan status dari localStorage
   useEffect(() => {
     if (ordersData?.data) {
-      setLocalOrders(ordersData.data);
+      // Buat salinan deep copy dari data pesanan
+      const processedOrders = JSON.parse(JSON.stringify(ordersData.data)) as Order[];
+      
+      // Terapkan status dari localStorage
+      processedOrders.forEach(order => {
+        order.cart.forEach(item => {
+          // Cek apakah item ini ada di daftar ready yang tersimpan
+          const isReady = persistedReadyItems.some(
+            pi => pi.orderId === order.id && pi.itemId === item.id
+          );
+          
+          // Cek apakah item ini ada di daftar delivered yang tersimpan
+          const isDelivered = persistedDeliveredItems.some(
+            pi => pi.orderId === order.id && pi.itemId === item.id
+          );
+          
+          // Terapkan status berdasarkan prioritas (delivered > ready > original)
+          if (isDelivered) {
+            item.status = "delivered";
+          } else if (isReady) {
+            item.status = "ready";
+          }
+          // Jika tidak ada di kedua daftar, status original tetap dipertahankan
+        });
+      });
+      
+      setLocalOrders(processedOrders);
     }
-  }, [ordersData]);
+  }, [ordersData, persistedReadyItems, persistedDeliveredItems]);
 
   // Action handlers
   const updateItemStatus = async (orderId: string, itemId: string, newStatus: "pending" | "ready" | "delivered") => {
@@ -76,6 +125,17 @@ const KitchenPage = () => {
     setLocalOrders(updatedOrders);
     
     try {
+      // Simpan perubahan ke localStorage berdasarkan status
+      if (newStatus === "ready") {
+        const updatedReadyItems = [...persistedReadyItems, { orderId, itemId }];
+        setPersistedReadyItems(updatedReadyItems);
+        localStorage.setItem(LS_READY_ORDERS_KEY, JSON.stringify(updatedReadyItems));
+      } else if (newStatus === "delivered") {
+        const updatedDeliveredItems = [...persistedDeliveredItems, { orderId, itemId }];
+        setPersistedDeliveredItems(updatedDeliveredItems);
+        localStorage.setItem(LS_DELIVERED_ORDERS_KEY, JSON.stringify(updatedDeliveredItems));
+      }
+      
       // Kirim perubahan ke server
       await fetch(`/api/cart/${orderId}/items/${itemId}`, {
         method: 'PATCH',
@@ -108,6 +168,17 @@ const KitchenPage = () => {
     });
     
     return items.sort((a, b) => b.order.createdAt.seconds - a.order.createdAt.seconds);
+  };
+
+  // Tambah fungsi untuk membersihkan localStorage (untuk keperluan debugging/testing)
+  const clearLocalStorage = () => {
+    if (confirm("Hapus semua data tersimpan? Ini akan mengembalikan semua pesanan ke status aslinya.")) {
+      localStorage.removeItem(LS_READY_ORDERS_KEY);
+      localStorage.removeItem(LS_DELIVERED_ORDERS_KEY);
+      setPersistedReadyItems([]);
+      setPersistedDeliveredItems([]);
+      mutate(); // Reload data dari server
+    }
   };
 
   // Status styling
@@ -161,9 +232,18 @@ const KitchenPage = () => {
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="w-full mx-auto">
         {/* Header */}
-        <div className="flex items-center mb-8">
-          <Utensils className="w-8 h-8 text-orange-600 mr-3" />
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Sistem Pesanan Dapur (Makanan)</h1>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center">
+            <Utensils className="w-8 h-8 text-orange-600 mr-3" />
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Sistem Pesanan Dapur (Makanan)</h1>
+          </div>
+          <button
+            onClick={clearLocalStorage}
+            className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded transition-colors"
+            title="Reset data tersimpan di perangkat ini"
+          >
+            Reset Data Lokal
+          </button>
         </div>
 
         {/* Order Columns */}
@@ -276,6 +356,9 @@ const KitchenPage = () => {
                         src={item.image} 
                         alt={item.name}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "https://via.placeholder.com/300x200?text=Makanan";
+                        }}
                       />
                     </div>
 
@@ -347,6 +430,9 @@ const KitchenPage = () => {
                         src={item.image} 
                         alt={item.name}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "https://via.placeholder.com/300x200?text=Makanan";
+                        }}
                       />
                     </div>
 

@@ -27,18 +27,67 @@ type Order = {
   };
 };
 
+// Kunci untuk localStorage
+const LS_READY_DRINKS_KEY = "barista_ready_drinks";
+const LS_DELIVERED_DRINKS_KEY = "barista_delivered_drinks";
+
 const BaristaPage = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [persistedReadyItems, setPersistedReadyItems] = useState<{orderId: string, itemId: string}[]>([]);
+  const [persistedDeliveredItems, setPersistedDeliveredItems] = useState<{orderId: string, itemId: string}[]>([]);
 
+  // Load data from localStorage on component mount
+  useEffect(() => {
+    try {
+      const savedReadyItems = localStorage.getItem(LS_READY_DRINKS_KEY);
+      if (savedReadyItems) {
+        setPersistedReadyItems(JSON.parse(savedReadyItems));
+      }
+      
+      const savedDeliveredItems = localStorage.getItem(LS_DELIVERED_DRINKS_KEY);
+      if (savedDeliveredItems) {
+        setPersistedDeliveredItems(JSON.parse(savedDeliveredItems));
+      }
+    } catch (err) {
+      console.error("Error loading data from localStorage:", err);
+    }
+  }, []);
+
+  // Fetch orders data and apply localStorage status
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
         const response = await axios.get("/api/cart");
-        setOrders(response.data.data);
+        
+        // Apply stored statuses to fetched data
+        const processedOrders = JSON.parse(JSON.stringify(response.data.data)) as Order[];
+        
+        processedOrders.forEach(order => {
+          order.cart.forEach(item => {
+            // Cek apakah item ini ada di daftar ready yang tersimpan
+            const isReady = persistedReadyItems.some(
+              pi => pi.orderId === order.id && pi.itemId === item.id
+            );
+            
+            // Cek apakah item ini ada di daftar delivered yang tersimpan
+            const isDelivered = persistedDeliveredItems.some(
+              pi => pi.orderId === order.id && pi.itemId === item.id
+            );
+            
+            // Terapkan status berdasarkan prioritas (delivered > ready > original)
+            if (isDelivered) {
+              item.status = "delivered";
+            } else if (isReady) {
+              item.status = "ready";
+            }
+          });
+        });
+        
+        setOrders(processedOrders);
       } catch (error: any) {
         console.error("Error fetching orders:", error.message);
         setError("Gagal memuat data pesanan. Silakan coba lagi.");
@@ -48,14 +97,15 @@ const BaristaPage = () => {
     };
 
     fetchData();
-  }, []);
+  }, [persistedReadyItems, persistedDeliveredItems]);
 
-  // Action handlers
-  const updateItemStatus = (orderId: string, itemId: string, newStatus: "pending" | "ready" | "delivered") => {
+  // Action handlers dengan penyimpanan ke localStorage
+  const updateItemStatus = async (orderId: string, itemId: string, newStatus: "pending" | "ready" | "delivered") => {
     if (!confirm("Apa anda yakin?")) {
       return;
     }
     
+    // Update UI optimistically
     setOrders(orders.map(order => {
       if (order.id === orderId) {
         return {
@@ -70,10 +120,43 @@ const BaristaPage = () => {
       }
       return order;
     }));
+    
+    try {
+      // Save to localStorage based on status
+      if (newStatus === "ready") {
+        const updatedReadyItems = [...persistedReadyItems, { orderId, itemId }];
+        setPersistedReadyItems(updatedReadyItems);
+        localStorage.setItem(LS_READY_DRINKS_KEY, JSON.stringify(updatedReadyItems));
+      } else if (newStatus === "delivered") {
+        const updatedDeliveredItems = [...persistedDeliveredItems, { orderId, itemId }];
+        setPersistedDeliveredItems(updatedDeliveredItems);
+        localStorage.setItem(LS_DELIVERED_DRINKS_KEY, JSON.stringify(updatedDeliveredItems));
+      }
+      
+      // Send to server
+      // await axios.patch(`/api/cart/${orderId}/items/${itemId}`, {
+      //   status: newStatus
+      // });
+    } catch (err) {
+      console.error("Error updating item status:", err);
+      alert("Gagal memperbarui status. Silakan coba lagi.");
+      // Could revert the optimistic update here
+    }
+  };
+
+  // Clear localStorage function
+  const clearLocalStorage = () => {
+    if (confirm("Hapus semua data tersimpan? Ini akan mengembalikan semua pesanan ke status aslinya.")) {
+      localStorage.removeItem(LS_READY_DRINKS_KEY);
+      localStorage.removeItem(LS_DELIVERED_DRINKS_KEY);
+      setPersistedReadyItems([]);
+      setPersistedDeliveredItems([]);
+      window.location.reload(); // Reload to get fresh data
+    }
   };
 
   // Filter drink items by status
-   const getDrinkItemsByStatus = (status: string) => {
+  const getDrinkItemsByStatus = (status: string) => {
     const items: { order: Order; item: DrinkItem }[] = [];
     
     orders.forEach(order => {
@@ -139,9 +222,18 @@ const BaristaPage = () => {
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="w-full mx-auto">
         {/* Header */}
-        <div className="flex items-center mb-8">
-          <Coffee className="w-8 h-8 text-brown-600 mr-3" />
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Sistem Pesanan Minuman</h1>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center">
+            <Coffee className="w-8 h-8 text-brown-600 mr-3" />
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Sistem Pesanan Minuman</h1>
+          </div>
+          <button
+            onClick={clearLocalStorage}
+            className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded transition-colors"
+            title="Reset data tersimpan di perangkat ini"
+          >
+            Reset Data Lokal
+          </button>
         </div>
 
         {/* Order Columns */}
@@ -254,6 +346,9 @@ const BaristaPage = () => {
                         src={item.image} 
                         alt={item.name}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "https://via.placeholder.com/300x200?text=Minuman";
+                        }}
                       />
                     </div>
 
@@ -325,6 +420,9 @@ const BaristaPage = () => {
                         src={item.image} 
                         alt={item.name}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "https://via.placeholder.com/300x200?text=Minuman";
+                        }}
                       />
                     </div>
 
