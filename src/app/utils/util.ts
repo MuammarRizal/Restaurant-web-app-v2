@@ -1,11 +1,11 @@
 import { CartItem } from "@/types/cart";
 
-export function capitalizeEachWord(text: String) {
+export function capitalizeEachWord(text: any) {
     if (!text) return '';
     return text
       .toLowerCase()
       .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((word: any) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
 }
 

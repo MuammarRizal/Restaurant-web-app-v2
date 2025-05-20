@@ -32,19 +32,26 @@ type Order = {
 const LS_READY_DRINKS_KEY = "barista_ready_drinks";
 const LS_DELIVERED_DRINKS_KEY = "barista_delivered_drinks";
 
-// SWR fetcher function
-const fetcher = (url: string) => axios.get(url).then(res => res.data);
+// Fungsi fetcher untuk useSWR
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error('Gagal memuat data pesanan');
+  }
+  return res.json();
+};
 
 const BaristaPage = () => {
-  const { data, error, isLoading, mutate } = useSWR('/api/cart', fetcher, {
-    refreshInterval: 5000, // Refresh every 5 seconds
-    revalidateOnFocus: true,
+  const { data: ordersData, error, isLoading, mutate } = useSWR<{ data: Order[] }>('/api/cart', fetcher, {
+    refreshInterval: 5000, // Auto-refresh setiap 5 detik
+    revalidateOnFocus: true, // Revalidasi ketika window/tab mendapatkan focus
   });
-  
+
+  const [localOrders, setLocalOrders] = useState<Order[]>([]);
   const [persistedReadyItems, setPersistedReadyItems] = useState<{orderId: string, itemId: string}[]>([]);
   const [persistedDeliveredItems, setPersistedDeliveredItems] = useState<{orderId: string, itemId: string}[]>([]);
 
-  // Load data from localStorage on component mount
+  // Load persisted items from localStorage on component mount
   useEffect(() => {
     try {
       const savedReadyItems = localStorage.getItem(LS_READY_DRINKS_KEY);
@@ -61,45 +68,65 @@ const BaristaPage = () => {
     }
   }, []);
 
-  // Process orders data with localStorage status
-  const processOrders = (orders: Order[]) => {
-    if (!orders) return [];
-    
-    return orders.map(order => {
-      const processedCart = order.cart.map(item => {
-        // Cek apakah item ini ada di daftar ready yang tersimpan
-        const isReady = persistedReadyItems.some(
-          pi => pi.orderId === order.id && pi.itemId === item.id
-        );
-        
-        // Cek apakah item ini ada di daftar delivered yang tersimpan
-        const isDelivered = persistedDeliveredItems.some(
-          pi => pi.orderId === order.id && pi.itemId === item.id
-        );
-        
-        // Terapkan status berdasarkan prioritas (delivered > ready > original)
-        if (isDelivered) {
-          return { ...item, status: "delivered" };
-        } else if (isReady) {
-          return { ...item, status: "ready" };
-        }
-        return item;
+  // Sync data dari SWR dengan state lokal dan aplikasikan status dari localStorage
+  useEffect(() => {
+    if (ordersData?.data) {
+      // Buat salinan deep copy dari data pesanan
+      const processedOrders = JSON.parse(JSON.stringify(ordersData.data)) as Order[];
+      
+      // Terapkan status dari localStorage
+      processedOrders.forEach(order => {
+        order.cart.forEach(item => {
+          // Cek apakah item ini ada di daftar ready yang tersimpan
+          const isReady = persistedReadyItems.some(
+            pi => pi.orderId === order.id && pi.itemId === item.id
+          );
+          
+          // Cek apakah item ini ada di daftar delivered yang tersimpan
+          const isDelivered = persistedDeliveredItems.some(
+            pi => pi.orderId === order.id && pi.itemId === item.id
+          );
+          
+          // Terapkan status berdasarkan prioritas (delivered > ready > original)
+          if (isDelivered) {
+            item.status = "delivered";
+          } else if (isReady) {
+            item.status = "ready";
+          }
+          // Jika tidak ada di kedua daftar, status original tetap dipertahankan
+        });
       });
       
-      return { ...order, cart: processedCart };
-    });
-  };
+      setLocalOrders(processedOrders);
+    }
+  }, [ordersData, persistedReadyItems, persistedDeliveredItems]);
 
-  const orders = processOrders(data?.data || []);
-
-  // Action handlers dengan penyimpanan ke localStorage
+  // Action handlers
   const updateItemStatus = async (orderId: string, itemId: string, newStatus: "pending" | "ready" | "delivered") => {
     if (!confirm("Apa anda yakin?")) {
       return;
     }
     
+    // Optimistic UI update
+    const updatedOrders = localOrders.map(order => {
+      if (order.id === orderId) {
+        return {
+          ...order,
+          cart: order.cart.map(item => {
+            if (item.id === itemId) {
+              return { ...item, status: newStatus };
+            }
+            return item;
+          })
+        };
+      }
+      return order;
+    });
+    
+    setLocalOrders(updatedOrders);
+
     try {
-      // Update localStorage based on status
+      // Simpan perubahan ke localStorage berdasarkan status
       if (newStatus === "ready") {
         const updatedReadyItems = [...persistedReadyItems, { orderId, itemId }];
         setPersistedReadyItems(updatedReadyItems);
@@ -109,37 +136,31 @@ const BaristaPage = () => {
         setPersistedDeliveredItems(updatedDeliveredItems);
         localStorage.setItem(LS_DELIVERED_DRINKS_KEY, JSON.stringify(updatedDeliveredItems));
       }
-      
-      // Optimistically update the UI
-      mutate({
-        ...data,
-        data: data.data.map((order: Order) => {
-          if (order.id === orderId) {
-            return {
-              ...order,
-              cart: order.cart.map(item => {
-                if (item.id === itemId) {
-                  return { ...item, status: newStatus };
-                }
-                return item;
-              })
-            };
-          }
-          return order;
-        })
-      }, false); // Don't revalidate immediately
-      
-      // Send to server (uncomment when ready)
-      // await axios.patch(`/api/cart/${orderId}/items/${itemId}`, {
-      //   status: newStatus
-      // });
-      
-      // Revalidate data
+  
+      // Revalidasi data dari server
       mutate();
     } catch (err) {
-      console.error("Error updating item status:", err);
-      alert("Gagal memperbarui status. Silakan coba lagi.");
+      console.error('Gagal memperbarui status:', err);
+      // Kembalikan ke state sebelumnya jika gagal
+      setLocalOrders(ordersData?.data || []);
+      alert('Gagal memperbarui status. Silakan coba lagi.');
     }
+  };
+
+  // Filter drink items by status
+  const getDrinkItemsByStatus = (status: string) => {
+    const items: { order: Order; item: DrinkItem }[] = [];
+    
+    localOrders.forEach(order => {
+      order.cart.forEach(item => {
+        if (item.status === status && item.category === "minuman") {
+          items.push({ order, item });
+        }
+      });
+    });
+    
+    // Sort by createdAt timestamp (newest first)
+    return items.sort((a, b) => b.order.createdAt.seconds - a.order.createdAt.seconds);
   };
 
   // Clear localStorage function
@@ -151,22 +172,6 @@ const BaristaPage = () => {
       setPersistedDeliveredItems([]);
       mutate(); // Revalidate data
     }
-  };
-
-  // Filter drink items by status
-  const getDrinkItemsByStatus = (status: string) => {
-    const items: { order: Order; item: DrinkItem }[] = [];
-    
-    orders.forEach((order: any) => {
-      order.cart.forEach((item: any) => {
-        if (item.status === status && item.category === "minuman") {
-          items.push({ order, item });
-        }
-      });
-    });
-    
-    // Sort by createdAt timestamp (newest first)
-    return items.sort((a, b) => b.order.createdAt.seconds - a.order.createdAt.seconds);
   };
 
   // Status styling
@@ -204,7 +209,7 @@ const BaristaPage = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="bg-white p-6 rounded-lg shadow-md text-center max-w-md">
           <h2 className="text-xl font-bold text-red-600 mb-2">Terjadi Kesalahan</h2>
-          <p className="text-gray-700 mb-4">Gagal memuat data pesanan. Silakan coba lagi.</p>
+          <p className="text-gray-700 mb-4">{error.message}</p>
           <button
             onClick={() => mutate()}
             className="bg-brown-500 text-white px-4 py-2 rounded hover:bg-brown-600 transition-colors"

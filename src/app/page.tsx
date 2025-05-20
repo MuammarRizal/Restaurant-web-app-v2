@@ -34,16 +34,17 @@ const Home = () => {
   };
 
   const handleSubmit = (e: React.FormEvent): void => {
-    setloading(true)
     e.preventDefault();
+    setloading(true)
     if (!name || !tableNumber) {
       setIsNameWarningOpen(true);
+      setloading(false)
       return;
     }
 
     dispatch(updateName(name));
     dispatch(updateTable(tableNumber));
-
+    setloading(false)
     router.push("/menus")
   };
 

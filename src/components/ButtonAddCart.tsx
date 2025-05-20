@@ -28,8 +28,8 @@ function ButtonAddCart({ cart, item, addToCart }: ButtonAddCartProps) {
         {isAvailable ? (
           <div className="space-y-2">
             <div className="flex justify-between text-xs text-orange-600">
-              <span>Tersisa</span>
-              <span>{item.quantity}x</span>
+              {/* <span>Tersisa</span> */}
+              {/* <span>{item.quantity}x</span> */}
             </div>
             
             <motion.div 
@@ -46,7 +46,7 @@ function ButtonAddCart({ cart, item, addToCart }: ButtonAddCartProps) {
               />
             </motion.div>
             
-            {remainingStock !== item.quantity && (
+            {/* {remainingStock !== item.quantity && (
               <motion.p 
                 className="text-xs text-right text-gray-500"
                 initial={{ opacity: 0 }}
@@ -55,7 +55,7 @@ function ButtonAddCart({ cart, item, addToCart }: ButtonAddCartProps) {
               >
                 Hampir habis!
               </motion.p>
-            )}
+            )} */}
           </div>
         ) : (
           <motion.div
