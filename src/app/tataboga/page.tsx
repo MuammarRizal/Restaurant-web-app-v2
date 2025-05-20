@@ -1,7 +1,7 @@
 "use client";
 import useSWR from "swr";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, CheckCircle, Truck, Utensils, User, Loader2 } from "lucide-react";
+import { Clock, CheckCircle, Truck, Utensils, User, Loader2, Dessert } from "lucide-react";
 import { useEffect, useState } from "react";
 import axios from "axios";
 
@@ -12,6 +12,7 @@ type CartItem = {
   notes?: string;
   image: string;
   category: string;
+  dessert?: string; // Added dessert field
   status: "pending" | "ready" | "delivered";
 };
 
@@ -43,15 +44,14 @@ const LS_DELIVERED_ORDERS_KEY = "kitchen_delivered_orders";
 
 const KitchenPage = () => {
   const { data: ordersData, error, isLoading, mutate } = useSWR<{ data: Order[] }>('/api/cart', fetcher, {
-    refreshInterval: 5000, // Auto-refresh setiap 5 detik
-    revalidateOnFocus: true, // Revalidasi ketika window/tab mendapatkan focus
+    refreshInterval: 5000,
+    revalidateOnFocus: true,
   });
 
   const [localOrders, setLocalOrders] = useState<Order[]>([]);
   const [persistedReadyItems, setPersistedReadyItems] = useState<{orderId: string, itemId: string}[]>([]);
   const [persistedDeliveredItems, setPersistedDeliveredItems] = useState<{orderId: string, itemId: string}[]>([]);
-  console.log({localOrders})
-  // Load persisted items from localStorage on component mount
+
   useEffect(() => {
     try {
       const savedReadyItems = localStorage.getItem(LS_READY_ORDERS_KEY);
@@ -68,32 +68,25 @@ const KitchenPage = () => {
     }
   }, []);
 
-  // Sync data dari SWR dengan state lokal dan aplikasikan status dari localStorage
   useEffect(() => {
     if (ordersData?.data) {
-      // Buat salinan deep copy dari data pesanan
       const processedOrders = JSON.parse(JSON.stringify(ordersData.data)) as Order[];
       
-      // Terapkan status dari localStorage
       processedOrders.forEach(order => {
         order.cart.forEach(item => {
-          // Cek apakah item ini ada di daftar ready yang tersimpan
           const isReady = persistedReadyItems.some(
             pi => pi.orderId === order.id && pi.itemId === item.id
           );
           
-          // Cek apakah item ini ada di daftar delivered yang tersimpan
           const isDelivered = persistedDeliveredItems.some(
             pi => pi.orderId === order.id && pi.itemId === item.id
           );
           
-          // Terapkan status berdasarkan prioritas (delivered > ready > original)
           if (isDelivered) {
             item.status = "delivered";
           } else if (isReady) {
             item.status = "ready";
           }
-          // Jika tidak ada di kedua daftar, status original tetap dipertahankan
         });
       });
       
@@ -101,15 +94,11 @@ const KitchenPage = () => {
     }
   }, [ordersData, persistedReadyItems, persistedDeliveredItems]);
 
-  // Action handlers
   const updateItemStatus = async (orderId: string, itemId: string, newStatus: "pending" | "ready" | "delivered") => {
     if (!confirm("Apa anda yakin?")) {
       return;
     }
-
-    console.log({orderId})
     
-    // Optimistic UI update
     const updatedOrders = localOrders.map(order => {
       if (order.id === orderId) {
         return {
@@ -128,7 +117,6 @@ const KitchenPage = () => {
     setLocalOrders(updatedOrders);
 
     try {
-      // Simpan perubahan ke localStorage berdasarkan status
       if (newStatus === "ready") {
         const updatedReadyItems = [...persistedReadyItems, { orderId, itemId }];
         setPersistedReadyItems(updatedReadyItems);
@@ -138,7 +126,6 @@ const KitchenPage = () => {
         setPersistedDeliveredItems(updatedDeliveredItems);
         localStorage.setItem(LS_DELIVERED_ORDERS_KEY, JSON.stringify(updatedDeliveredItems));
         
-        // Call the PUT API to update isReady status when marked as delivered
         await axios.put('/api/cart', { 
           docId: orderId,
           isReady: true 
@@ -149,17 +136,14 @@ const KitchenPage = () => {
         });
       }
   
-  // Revalidasi data dari server
-  mutate();
-} catch (err) {
-  console.error('Gagal memperbarui status:', err);
-  // Kembalikan ke state sebelumnya jika gagal
-  setLocalOrders(ordersData?.data || []);
-  alert('Gagal memperbarui status. Silakan coba lagi.');
-}
+      mutate();
+    } catch (err) {
+      console.error('Gagal memperbarui status:', err);
+      setLocalOrders(ordersData?.data || []);
+      alert('Gagal memperbarui status. Silakan coba lagi.');
+    }
   };
 
-  // Filter orders by status and category (only makanan)
   const getFoodItemsByStatus = (status: string) => {
     const items: { order: Order; item: CartItem }[] = [];
     
@@ -174,31 +158,16 @@ const KitchenPage = () => {
     return items.sort((a, b) => b.order.createdAt.seconds - a.order.createdAt.seconds);
   };
 
-  // Tambah fungsi untuk membersihkan localStorage (untuk keperluan debugging/testing)
   const clearLocalStorage = () => {
     if (confirm("Hapus semua data tersimpan? Ini akan mengembalikan semua pesanan ke status aslinya.")) {
       localStorage.removeItem(LS_READY_ORDERS_KEY);
       localStorage.removeItem(LS_DELIVERED_ORDERS_KEY);
       setPersistedReadyItems([]);
       setPersistedDeliveredItems([]);
-      mutate(); // Reload data dari server
+      mutate();
     }
   };
 
-  // Status styling
-  const statusStyles = {
-    pending: "bg-yellow-100 text-yellow-800",
-    ready: "bg-blue-100 text-blue-800",
-    delivered: "bg-green-100 text-green-800"
-  };
-
-  const statusIcons = {
-    pending: <Clock className="w-4 h-4" />,
-    ready: <CheckCircle className="w-4 h-4" />,
-    delivered: <Truck className="w-4 h-4" />
-  };
-
-  // Calculate minutes since order was created
   const getMinutesSince = (seconds: number) => {
     const now = Math.floor(Date.now() / 1000);
     return Math.floor((now - seconds) / 60);
@@ -241,13 +210,13 @@ const KitchenPage = () => {
             <Utensils className="w-8 h-8 text-orange-600 mr-3" />
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Sistem Pesanan Dapur (Makanan)</h1>
           </div>
-          {/* <button
+          <button
             onClick={clearLocalStorage}
             className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded transition-colors"
             title="Reset data tersimpan di perangkat ini"
           >
             Reset Data Lokal
-          </button> */}
+          </button>
         </div>
 
         {/* Order Columns */}
@@ -281,7 +250,7 @@ const KitchenPage = () => {
                     </div>
 
                     {/* Food Image */}
-                    <div className="w-full h-32 mb-3 rounded-lg overflow-hidden">
+                    <div className="w-full h-32 mb-3 rounded-lg overflow-hidden bg-gray-100">
                       <img 
                         src={item.image} 
                         alt={item.name}
@@ -294,7 +263,7 @@ const KitchenPage = () => {
 
                     {/* Order Item */}
                     <div className="text-sm mb-3">
-                      <div className="flex justify-between">
+                      <div className="flex justify-between items-start">
                         <span>
                           {item.quantity}x {item.name}
                         </span>
@@ -302,9 +271,18 @@ const KitchenPage = () => {
                           {getMinutesSince(order.createdAt.seconds)} mnt
                         </span>
                       </div>
+                      
+                      {/* Dessert Information */}
+                      {item.dessert && (
+                        <div className="flex items-center mt-2 text-sm text-purple-700 bg-purple-50 p-2 rounded">
+                          <Dessert className="w-4 h-4 mr-2" />
+                          <span>Dessert: {item.dessert}</span>
+                        </div>
+                      )}
+                      
                       {item.notes && (
-                        <p className="text-xs text-gray-500 mt-1 bg-blue-50 p-2 rounded">
-                          📝 {item.notes}
+                        <p className="text-xs text-gray-500 mt-2 bg-blue-50 p-2 rounded">
+                          📝 Catatan: {item.notes}
                         </p>
                       )}
                     </div>
@@ -355,7 +333,7 @@ const KitchenPage = () => {
                     </div>
 
                     {/* Food Image */}
-                    <div className="w-full h-32 mb-3 rounded-lg overflow-hidden">
+                    <div className="w-full h-32 mb-3 rounded-lg overflow-hidden bg-gray-100">
                       <img 
                         src={item.image} 
                         alt={item.name}
@@ -368,7 +346,7 @@ const KitchenPage = () => {
 
                     {/* Order Item */}
                     <div className="text-sm mb-3">
-                      <div className="flex justify-between">
+                      <div className="flex justify-between items-start">
                         <span>
                           {item.quantity}x {item.name}
                         </span>
@@ -376,9 +354,18 @@ const KitchenPage = () => {
                           {getMinutesSince(order.createdAt.seconds)} mnt
                         </span>
                       </div>
+                      
+                      {/* Dessert Information */}
+                      {item.dessert && (
+                        <div className="flex items-center mt-2 text-sm text-purple-700 bg-purple-50 p-2 rounded">
+                          <Dessert className="w-4 h-4 mr-2" />
+                          <span>Dessert: {item.dessert}</span>
+                        </div>
+                      )}
+                      
                       {item.notes && (
-                        <p className="text-xs text-gray-500 mt-1 bg-blue-50 p-2 rounded">
-                          📝 {item.notes}
+                        <p className="text-xs text-gray-500 mt-2 bg-blue-50 p-2 rounded">
+                          📝 Catatan: {item.notes}
                         </p>
                       )}
                     </div>
@@ -429,7 +416,7 @@ const KitchenPage = () => {
                     </div>
 
                     {/* Food Image */}
-                    <div className="w-full h-32 mb-3 rounded-lg overflow-hidden">
+                    <div className="w-full h-32 mb-3 rounded-lg overflow-hidden bg-gray-100">
                       <img 
                         src={item.image} 
                         alt={item.name}
@@ -442,7 +429,7 @@ const KitchenPage = () => {
 
                     {/* Order Item */}
                     <div className="text-sm mb-3">
-                      <div className="flex justify-between">
+                      <div className="flex justify-between items-start">
                         <span>
                           {item.quantity}x {item.name}
                         </span>
@@ -450,9 +437,18 @@ const KitchenPage = () => {
                           {getMinutesSince(order.createdAt.seconds)} mnt
                         </span>
                       </div>
+                      
+                      {/* Dessert Information */}
+                      {item.dessert && (
+                        <div className="flex items-center mt-2 text-sm text-purple-700 bg-purple-50 p-2 rounded">
+                          <Dessert className="w-4 h-4 mr-2" />
+                          <span>Dessert: {item.dessert}</span>
+                        </div>
+                      )}
+                      
                       {item.notes && (
-                        <p className="text-xs text-gray-500 mt-1 bg-blue-50 p-2 rounded">
-                          📝 {item.notes}
+                        <p className="text-xs text-gray-500 mt-2 bg-blue-50 p-2 rounded">
+                          📝 Catatan: {item.notes}
                         </p>
                       )}
                     </div>
