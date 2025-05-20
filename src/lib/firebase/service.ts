@@ -1,4 +1,4 @@
-import { addDoc, collection, doc, getDoc, getDocs, getFirestore } from "firebase/firestore"
+import { addDoc, collection, doc, getDoc, getDocs, getFirestore, setDoc, updateDoc } from "firebase/firestore"
 import app from './init'
 import { getDatabase } from "firebase/database";
 import { CartItem } from "@/types/cart";
@@ -24,12 +24,32 @@ export async function retrieveDataMenusById(collectionName: string, id: string){
 }
 
 export async function addDataFirebase(collectionName: string, payload: {cart?: CartItem, user?: User, code?: number | string, id?: string}) {
-    const docRef = await addDoc(collection(firestore,collectionName),{
+    const newDocRef = doc(collection(firestore, collectionName));
+    
+    await setDoc(newDocRef, {
         ...payload,
-        id: +new Date(),
+        id: newDocRef.id,  // Gunakan ID yang sudah dibuat
+        isReady: false,
         createdAt: new Date()
-    })
+    });
+    
+    return newDocRef.id;
 }
+
+export async function updateOrderStatus(collectionName: string, docId: string, isReady: boolean): Promise<boolean> {
+    try {
+        const orderRef = doc(firestore, collectionName, docId);
+        await updateDoc(orderRef, {
+            isReady: isReady,
+            updatedAt: new Date()
+        });
+        return true;
+    } catch (error) {
+        console.error("Error updating order status:", error);
+        return false;
+    }
+}
+
 
 // export async function deleteAllDataQR(collectionName: string){
 //     const docRef = await delete

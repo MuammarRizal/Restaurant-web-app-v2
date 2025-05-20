@@ -3,6 +3,7 @@ import useSWR from "swr";
 import { motion, AnimatePresence } from "framer-motion";
 import { Clock, CheckCircle, Truck, Utensils, User, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import axios from "axios";
 
 type CartItem = {
   id: string;
@@ -49,7 +50,7 @@ const KitchenPage = () => {
   const [localOrders, setLocalOrders] = useState<Order[]>([]);
   const [persistedReadyItems, setPersistedReadyItems] = useState<{orderId: string, itemId: string}[]>([]);
   const [persistedDeliveredItems, setPersistedDeliveredItems] = useState<{orderId: string, itemId: string}[]>([]);
-
+  console.log({localOrders})
   // Load persisted items from localStorage on component mount
   useEffect(() => {
     try {
@@ -105,6 +106,8 @@ const KitchenPage = () => {
     if (!confirm("Apa anda yakin?")) {
       return;
     }
+
+    console.log({orderId})
     
     // Optimistic UI update
     const updatedOrders = localOrders.map(order => {
@@ -123,7 +126,7 @@ const KitchenPage = () => {
     });
     
     setLocalOrders(updatedOrders);
-    
+
     try {
       // Simpan perubahan ke localStorage berdasarkan status
       if (newStatus === "ready") {
@@ -134,25 +137,26 @@ const KitchenPage = () => {
         const updatedDeliveredItems = [...persistedDeliveredItems, { orderId, itemId }];
         setPersistedDeliveredItems(updatedDeliveredItems);
         localStorage.setItem(LS_DELIVERED_ORDERS_KEY, JSON.stringify(updatedDeliveredItems));
+        
+        // Call the PUT API to update isReady status when marked as delivered
+        await axios.put('/api/cart', { 
+          docId: orderId,
+          isReady: true 
+        }, {
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
       }
-      
-      // Kirim perubahan ke server
-      await fetch(`/api/cart/${orderId}/items/${itemId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      
-      // Revalidasi data dari server
-      mutate();
-    } catch (err) {
-      console.error('Gagal memperbarui status:', err);
-      // Kembalikan ke state sebelumnya jika gagal
-      setLocalOrders(ordersData?.data || []);
-      alert('Gagal memperbarui status. Silakan coba lagi.');
-    }
+  
+  // Revalidasi data dari server
+  mutate();
+} catch (err) {
+  console.error('Gagal memperbarui status:', err);
+  // Kembalikan ke state sebelumnya jika gagal
+  setLocalOrders(ordersData?.data || []);
+  alert('Gagal memperbarui status. Silakan coba lagi.');
+}
   };
 
   // Filter orders by status and category (only makanan)
