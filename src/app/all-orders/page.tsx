@@ -269,11 +269,11 @@ const CustomerOrderPage = () => {
                     {/* Food Image */}
                     <div className="w-full h-36 relative">
                       <img
-                        src={foodImage || "https://via.placeholder.com/300x200?text=Makanan"}
+                        src={foodImage || "https://cdn1.sisiplus.co.id/media/sisiplus/asset/uploads/artikel/0RzAgdXcgFYiIJEicyob41baAMoKFFIJP4FG3tOj.jpg"}
                         alt="Makanan"
                         className="w-full h-full object-cover"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = "https://via.placeholder.com/300x200?text=Makanan";
+                          (e.target as HTMLImageElement).src = "https://cdn1.sisiplus.co.id/media/sisiplus/asset/uploads/artikel/0RzAgdXcgFYiIJEicyob41baAMoKFFIJP4FG3tOj.jpg";
                         }}
                       />
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3">
