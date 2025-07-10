@@ -3,7 +3,7 @@ interface FoodProps{
         id: number | string;
         name: string;
         description: string;
-        price: number;
+        quantity: number;
     };
     onDelete: (id: string | number) => void
 }
@@ -14,7 +14,7 @@ const FoodItem = ({ food, onDelete } : FoodProps) => {
         <div>
           <h3 className="font-bold text-lg">{food.name}</h3>
           <p className="text-gray-600">{food.description}</p>
-          <p className="text-blue-600 font-semibold">Rp{food.price}</p>
+          <p className="text-blue-600 font-semibold">{food.quantity}x</p>
         </div>
         <div>
           <button className="bg-yellow-500 text-white px-3 py-1 rounded mr-2">

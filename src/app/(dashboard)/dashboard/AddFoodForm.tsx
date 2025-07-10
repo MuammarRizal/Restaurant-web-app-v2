@@ -87,12 +87,12 @@ const AddFoodForm = ({ onAddFood } : any) => {
 
         {/* JIKA KATEGORINYA MAKANAN MAKA TAMPILKAN INI */}
         <div>
-          <label className="block text-gray-700 mb-2">Nama Makanan</label>
+          <label className="block text-gray-700 mb-2">Dessert</label>
           <input
             type="text"
             name="name"
-            value={formData.name}
-            onChange={handleChange}
+            // value={formData.name}
+            // onChange={handleChange}
             className="w-full p-2 border rounded"
             required
           />

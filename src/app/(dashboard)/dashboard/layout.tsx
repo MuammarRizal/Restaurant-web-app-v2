@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
     // const path: any = window.location.pathname
-    const path = '/dashboard'
+    const path = '/dashboard' // Belum di perbaiki
   // Daftar menu sidebar
   const menuItems = [
     {

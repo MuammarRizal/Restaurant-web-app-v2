@@ -8,7 +8,7 @@ type FoodItem = {
     id: number | string;
     name: string;
     description: string;
-    price: number;
+    quantity: number;
     category: string;
 }
 
@@ -26,14 +26,14 @@ const AdminDashboard = () => {
             id: 1,
             name: 'Nasi Goreng Spesial',
             description: 'Nasi goreng dengan telur, ayam, dan sayuran',
-            price: 35000,
+            quantity: 35000,
             category: 'main'
           },
           {
             id: 2,
             name: 'Es Teh Manis',
             description: 'Es teh dengan gula sesuai selera',
-            price: 10000,
+            quantity: 10000,
             category: 'drink'
           }
         ]);
@@ -45,6 +45,7 @@ const AdminDashboard = () => {
   }, []);
 
   const handleAddFood = (newFood: any) => {
+    console.log({newFood})
     setFoods(prev => [...prev, newFood]);
   };
 
