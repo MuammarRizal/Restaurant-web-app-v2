@@ -4,7 +4,7 @@ const AddFoodForm = ({ onAddFood } : any) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    price: '',
+    quantity: '',
     category: 'main',
   });
 
@@ -20,13 +20,13 @@ const AddFoodForm = ({ onAddFood } : any) => {
     e.preventDefault();
     onAddFood({
       ...formData,
-      price: parseFloat(formData.price),
+      quantity: parseFloat(formData.quantity),
       id: Date.now() // temporary ID
     });
     setFormData({
       name: '',
       description: '',
-      price: '',
+      quantity: '',
       category: 'main',
     });
   };
@@ -47,11 +47,11 @@ const AddFoodForm = ({ onAddFood } : any) => {
           />
         </div>
         <div>
-          <label className="block text-gray-700 mb-2">Harga</label>
+          <label className="block text-gray-700 mb-2">Quantity</label>
           <input
             type="number"
-            name="price"
-            value={formData.price}
+            name="quantity"
+            value={formData.quantity}
             onChange={handleChange}
             className="w-full p-2 border rounded"
             required
@@ -65,11 +65,37 @@ const AddFoodForm = ({ onAddFood } : any) => {
             onChange={handleChange}
             className="w-full p-2 border rounded"
           >
-            <option value="main">Main Course</option>
-            <option value="appetizer">Appetizer</option>
-            <option value="dessert">Dessert</option>
-            <option value="drink">Drink</option>
+            <option value="makanan">Makanan</option>
+            <option value="minuman">Minuman</option>
           </select>
+        </div>
+
+        {/* JIKA KATEGORI NYA MINUMAN MAKA TAMPILKAN INI */}
+        <div>
+          <label className="block text-gray-700 mb-2">Label</label>
+          <select
+            name="category"
+            // value={formData.category}
+            // onChange={handleChange}
+            className="w-full p-2 border rounded"
+          >
+            <option value="tea">Tea</option>
+            <option value="coffee">Coffee</option>
+            <option value="powder">Powder</option>
+          </select>
+        </div>
+
+        {/* JIKA KATEGORINYA MAKANAN MAKA TAMPILKAN INI */}
+        <div>
+          <label className="block text-gray-700 mb-2">Nama Makanan</label>
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+            required
+          />
         </div>
         <div className="md:col-span-2">
           <label className="block text-gray-700 mb-2">Deskripsi</label>
