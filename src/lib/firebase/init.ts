@@ -9,11 +9,11 @@ const firebaseConfig = {
   authDomain: "ppkd-jakartaselatan.firebaseapp.com",
   projectId: "ppkd-jakartaselatan",
   storageBucket: "ppkd-jakartaselatan.firebasestorage.app",
-  messagingSenderId: "786846818218", 
-  appId: "1:786846818218:web:a4c4939231e1c1eaf715d3"
+  messagingSenderId: "786846818218",
+  appId: "1:786846818218:web:a4c4939231e1c1eaf715d3",
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-export default app
+export default app;

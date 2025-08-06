@@ -4,7 +4,7 @@ import { Clock, CookingPot, Home, ScanQrCode } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 const OrderInProgress = () => {
-  const router = useRouter()
+  const router = useRouter();
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white flex flex-col items-center justify-center p-4">
       <motion.div
@@ -15,14 +15,14 @@ const OrderInProgress = () => {
       >
         {/* Animated Icon */}
         <motion.div
-          animate={{ 
+          animate={{
             rotate: [0, 10, -10, 0],
-            y: [0, -10, 0] 
+            y: [0, -10, 0],
           }}
-          transition={{ 
-            repeat: Infinity, 
+          transition={{
+            repeat: Infinity,
             duration: 2,
-            ease: "easeInOut" 
+            ease: "easeInOut",
           }}
           className="mx-auto w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mb-6"
         >
@@ -33,7 +33,7 @@ const OrderInProgress = () => {
         <h1 className="text-2xl font-bold text-gray-800 mb-3">
           Pesanan Sedang Diproses
         </h1>
-        
+
         {/* Subtitle */}
         <p className="text-gray-600 mb-6">
           Tim kami sedang menyiapkan pesanan Anda dengan sepenuh hati
@@ -45,14 +45,14 @@ const OrderInProgress = () => {
             {[...Array(3)].map((_, i) => (
               <motion.div
                 key={i}
-                animate={{ 
+                animate={{
                   y: [0, -10, 0],
-                  opacity: [0.5, 1, 0.5]
+                  opacity: [0.5, 1, 0.5],
                 }}
-                transition={{ 
-                  repeat: Infinity, 
+                transition={{
+                  repeat: Infinity,
                   duration: 1.5,
-                  delay: i * 0.2 
+                  delay: i * 0.2,
                 }}
                 className="w-3 h-3 bg-orange-500 rounded-full"
               />
@@ -72,8 +72,8 @@ const OrderInProgress = () => {
           whileTap={{ scale: 0.95 }}
           onClick={() => {
             // router.push('/')
-            window.location.href = "https://collaboration-day-ppkd-js.vercel.app/validation"
-            localStorage.clear()
+            window.location.href = "http://localhost:3000/validation";
+            localStorage.clear();
           }}
           className="cursor-pointer mt-6 flex items-center justify-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors mx-auto"
         >
@@ -84,15 +84,15 @@ const OrderInProgress = () => {
         {/* Chef Illustration */}
         <motion.div
           animate={{ x: [-5, 5, -5] }}
-          transition={{ 
-            repeat: Infinity, 
+          transition={{
+            repeat: Infinity,
             duration: 3,
-            ease: "easeInOut" 
+            ease: "easeInOut",
           }}
           className="mt-8"
         >
-          <img 
-            src="https://cdn-icons-png.flaticon.com/512/2936/2936886.png" 
+          <img
+            src="https://cdn-icons-png.flaticon.com/512/2936/2936886.png"
             alt="Chef cooking"
             className="w-24 h-24 mx-auto"
           />

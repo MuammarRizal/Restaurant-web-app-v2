@@ -1,56 +1,45 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react';
-import FoodItem from './FoodItem';
-import AddFoodForm from './AddFoodForm';
+import { useState, useEffect } from "react";
+import FoodItem from "./FoodItem";
+import AddFoodForm from "./AddFoodForm";
+import axios from "axios";
 
 type FoodItem = {
-    id: number | string;
-    name: string;
-    description: string;
-    quantity: number;
-    category: string;
-}
+  id: number | string;
+  name: string;
+  description: string;
+  image: string;
+  quantity: number;
+  category: string;
+};
 
 const AdminDashboard = () => {
   const [foods, setFoods] = useState<FoodItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  console.log(foods);
 
-  // Fetch data from API (in a real app, this would be an API call)
   useEffect(() => {
-    const fetchFoods = async () => {
-      // Simulate API call
-      setTimeout(() => {
-        setFoods([
-          {
-            id: 1,
-            name: 'Nasi Goreng Spesial',
-            description: 'Nasi goreng dengan telur, ayam, dan sayuran',
-            quantity: 35000,
-            category: 'main'
-          },
-          {
-            id: 2,
-            name: 'Es Teh Manis',
-            description: 'Es teh dengan gula sesuai selera',
-            quantity: 10000,
-            category: 'drink'
-          }
-        ]);
+    const fetchData = async () => {
+      try {
+        const { data } = await axios.get("/api/menus");
+        setFoods(data.data);
+      } catch (error) {
+        console.log(error);
+      } finally {
         setIsLoading(false);
-      }, 500);
+      }
     };
-
-    fetchFoods();
+    fetchData();
   }, []);
-
+  console.log(foods);
   const handleAddFood = (newFood: any) => {
-    console.log({newFood})
-    setFoods(prev => [...prev, newFood]);
+    console.log({ newFood });
+    setFoods((prev) => [...prev, newFood]);
   };
 
   const handleDeleteFood = (id: any) => {
-    setFoods(prev => prev.filter(food => food.id !== id));
+    setFoods((prev) => prev.filter((food) => food.id !== id));
   };
 
   return (
@@ -65,13 +54,13 @@ const AdminDashboard = () => {
           <div className="bg-white p-4 rounded-lg shadow-md">
             <h3 className="text-gray-500">Menu Utama</h3>
             <p className="text-3xl font-bold">
-              {foods.filter(food => food.category === 'main').length}
+              {foods.filter((food) => food.category === "main").length}
             </p>
           </div>
           <div className="bg-white p-4 rounded-lg shadow-md">
             <h3 className="text-gray-500">Minuman</h3>
             <p className="text-3xl font-bold">
-              {foods.filter(food => food.category === 'drink').length}
+              {foods.filter((food) => food.category === "drink").length}
             </p>
           </div>
         </div>
@@ -84,15 +73,13 @@ const AdminDashboard = () => {
         {isLoading ? (
           <p>Loading...</p>
         ) : foods.length === 0 ? (
-          <p className="text-gray-500">Belum ada menu makanan. Silakan tambahkan menu.</p>
+          <p className="text-gray-500">
+            Belum ada menu makanan. Silakan tambahkan menu.
+          </p>
         ) : (
           <div className="space-y-4">
-            {foods.map(food => (
-              <FoodItem 
-                key={food.id} 
-                food={food} 
-                onDelete={handleDeleteFood}
-              />
+            {foods.map((food) => (
+              <FoodItem key={food.id} food={food} onDelete={handleDeleteFood} />
             ))}
           </div>
         )}

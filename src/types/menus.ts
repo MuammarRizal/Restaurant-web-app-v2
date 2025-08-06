@@ -16,8 +16,19 @@ export interface MenuItem {
   quantity: number;
   price?: number;
   // New properties
-  dessert?: string;  // For food items
-  label?: string;    // For drink items
+  dessert?: string; // For food items
+  label?: string; // For drink items
   createdAt?: string;
-  notes?: string;    // For cart items
+  notes?: string; // For cart items
+}
+
+export interface MenuItemApi {
+  id?: string;
+  name: string;
+  quantity: number;
+  label?: string;
+  dessert?: string;
+  category: "makanan" | "minuman";
+  image: string;
+  createdAt?: Date;
 }
