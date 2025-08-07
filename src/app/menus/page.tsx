@@ -6,37 +6,43 @@ import { addItem } from "@/features/cart/cartSlice";
 import { RootState } from "@/store/store";
 import { CartItem } from "@/types/cart";
 import { MenuItem } from "@/types/menus";
-import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { capitalizeEachWord } from "../utils/util";
 import LoadingProgress from "@/components/LoadingProgress";
+import useSWR from "swr";
+import { fetcher } from "../utils/fetcher";
 
 const Menus = () => {
   // State
   const [cart, setCart] = useState<CartItem[]>([]);
   const [menus, setMenus] = useState<MenuItem[]>([]);
-  const [foods, setFoods] = useState<MenuItem[]>([]);
-  const [drinks, setDrinks] = useState<MenuItem[]>([]);
-  const [error, setError] = useState(null);
   const [activeCategory, setActiveCategory] = useState<string>("Semua");
   const [activeDrinkLabel, setActiveDrinkLabel] = useState<string>("Semua");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(true);
   const [isOrderedLoading, setIsLoadingOrdered] = useState<boolean>(false);
   const dispatch = useDispatch();
   const router = useRouter();
 
-  const drinkLabels = [
-    "Semua",
-    "tea",
-    "espresso",
-    "flavored",
-    "brew",
-    "powder",
-    "mixology",
-  ];
+  const { data, isLoading, error } = useSWR("/api/menus", fetcher, {
+    refreshInterval: 3000,
+  });
+  useEffect(() => {
+    const storage = localStorage.getItem("qr_code");
+    if (!storage) {
+      alert("Silahkan Scan QR Dahulu");
+      router.push("/validation");
+      return;
+    }
+    if (data && data.data) {
+      const allMenus = data.data;
+      console.log(allMenus);
+      setMenus(allMenus);
+    }
+  }, [data]);
+
+  const drinkLabels = ["tea", "coffee", "non-coffee"];
 
   // Filter menu items
   const filteredItems = menus.filter((item) => {
@@ -80,7 +86,7 @@ const Menus = () => {
   // Group items by category and label for "Semua" view
   const groupedItems = {
     makanan: filteredItems.filter((item) => item.category === "makanan"),
-    minuman: drinkLabels.slice(1).reduce((acc, label) => {
+    minuman: drinkLabels.reduce((acc, label) => {
       acc[label] = filteredItems.filter(
         (item) => item.category === "minuman" && item.label === label
       );
@@ -127,44 +133,10 @@ const Menus = () => {
     router.push("order-list");
   };
 
-  useEffect(() => {
-    const storage = localStorage.getItem("qr_code");
-    if (!storage) {
-      alert("Silahkan Scan QR Dahulu");
-      router.push("/validation");
-      return;
-    }
-    const fetchData = async () => {
-      try {
-        const response = await axios.get("/api/menus");
-        const allMenus = response.data.data;
-
-        // Set all menus
-        setMenus(allMenus);
-
-        // Separate foods and drinks for potential future use
-        const foodsData = allMenus.filter(
-          (item: MenuItem) => item.category === "makanan"
-        );
-        const drinksData = allMenus.filter(
-          (item: MenuItem) => item.category === "minuman"
-        );
-
-        setFoods(foodsData);
-        setDrinks(drinksData);
-      } catch (error: any) {
-        setError(error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
-
   const username = useSelector((state: RootState) => state.users.username);
   const table = useSelector((state: RootState) => state.users.table);
 
-  if (loading) return <Loading />;
+  if (isLoading) return <Loading />;
   if (error) return <div>Error: {error}</div>;
 
   // Render menu item with category-specific properties
@@ -185,9 +157,6 @@ const Menus = () => {
         />
       </div>
       <div className="p-3">
-        {/* <h3 className="font-medium">{item.name}</h3> */}
-
-        {/* Display category-specific properties */}
         {item.category === "makanan" && (
           <p className="text-sm text-gray-500 mt-1">
             🍰 Dessert: {item.dessert || "N/A"}

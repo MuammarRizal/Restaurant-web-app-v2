@@ -1,7 +1,15 @@
 "use client";
 import useSWR from "swr";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, CheckCircle, Truck, Utensils, User, Loader2, Dessert } from "lucide-react";
+import {
+  Clock,
+  CheckCircle,
+  Truck,
+  Utensils,
+  User,
+  Loader2,
+  Dessert,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import axios from "axios";
 
@@ -29,28 +37,35 @@ type Order = {
   };
 };
 
-// Fungsi fetcher untuk useSWR
 const fetcher = async (url: string) => {
   const res = await fetch(url);
   if (!res.ok) {
-    throw new Error('Gagal memuat data pesanan');
+    throw new Error("Gagal memuat data pesanan");
   }
   return res.json();
 };
 
-// Kunci untuk localStorage
 const LS_READY_ORDERS_KEY = "kitchen_ready_orders";
 const LS_DELIVERED_ORDERS_KEY = "kitchen_delivered_orders";
 
 const KitchenPage = () => {
-  const { data: ordersData, error, isLoading, mutate } = useSWR<{ data: Order[] }>('/api/cart', fetcher, {
+  const {
+    data: ordersData,
+    error,
+    isLoading,
+    mutate,
+  } = useSWR<{ data: Order[] }>("/api/cart", fetcher, {
     refreshInterval: 5000,
     revalidateOnFocus: true,
   });
 
   const [localOrders, setLocalOrders] = useState<Order[]>([]);
-  const [persistedReadyItems, setPersistedReadyItems] = useState<{orderId: string, itemId: string}[]>([]);
-  const [persistedDeliveredItems, setPersistedDeliveredItems] = useState<{orderId: string, itemId: string}[]>([]);
+  const [persistedReadyItems, setPersistedReadyItems] = useState<
+    { orderId: string; itemId: string }[]
+  >([]);
+  const [persistedDeliveredItems, setPersistedDeliveredItems] = useState<
+    { orderId: string; itemId: string }[]
+  >([]);
 
   useEffect(() => {
     try {
@@ -58,7 +73,7 @@ const KitchenPage = () => {
       if (savedReadyItems) {
         setPersistedReadyItems(JSON.parse(savedReadyItems));
       }
-      
+
       const savedDeliveredItems = localStorage.getItem(LS_DELIVERED_ORDERS_KEY);
       if (savedDeliveredItems) {
         setPersistedDeliveredItems(JSON.parse(savedDeliveredItems));
@@ -70,18 +85,20 @@ const KitchenPage = () => {
 
   useEffect(() => {
     if (ordersData?.data) {
-      const processedOrders = JSON.parse(JSON.stringify(ordersData.data)) as Order[];
-      
-      processedOrders.forEach(order => {
-        order.cart.forEach(item => {
+      const processedOrders = JSON.parse(
+        JSON.stringify(ordersData.data)
+      ) as Order[];
+
+      processedOrders.forEach((order) => {
+        order.cart.forEach((item) => {
           const isReady = persistedReadyItems.some(
-            pi => pi.orderId === order.id && pi.itemId === item.id
+            (pi) => pi.orderId === order.id && pi.itemId === item.id
           );
-          
+
           const isDelivered = persistedDeliveredItems.some(
-            pi => pi.orderId === order.id && pi.itemId === item.id
+            (pi) => pi.orderId === order.id && pi.itemId === item.id
           );
-          
+
           if (isDelivered) {
             item.status = "delivered";
           } else if (isReady) {
@@ -89,77 +106,100 @@ const KitchenPage = () => {
           }
         });
       });
-      
+
       setLocalOrders(processedOrders);
     }
   }, [ordersData, persistedReadyItems, persistedDeliveredItems]);
 
-  const updateItemStatus = async (orderId: string, itemId: string, newStatus: "pending" | "ready" | "delivered") => {
+  const updateItemStatus = async (
+    orderId: string,
+    itemId: string,
+    newStatus: "pending" | "ready" | "delivered"
+  ) => {
     if (!confirm("Apa anda yakin?")) {
       return;
     }
-    
-    const updatedOrders = localOrders.map(order => {
+
+    const updatedOrders = localOrders.map((order) => {
       if (order.id === orderId) {
         return {
           ...order,
-          cart: order.cart.map(item => {
+          cart: order.cart.map((item) => {
             if (item.id === itemId) {
               return { ...item, status: newStatus };
             }
             return item;
-          })
+          }),
         };
       }
       return order;
     });
-    
+
     setLocalOrders(updatedOrders);
 
     try {
       if (newStatus === "ready") {
         const updatedReadyItems = [...persistedReadyItems, { orderId, itemId }];
         setPersistedReadyItems(updatedReadyItems);
-        localStorage.setItem(LS_READY_ORDERS_KEY, JSON.stringify(updatedReadyItems));
+        localStorage.setItem(
+          LS_READY_ORDERS_KEY,
+          JSON.stringify(updatedReadyItems)
+        );
       } else if (newStatus === "delivered") {
-        const updatedDeliveredItems = [...persistedDeliveredItems, { orderId, itemId }];
+        const updatedDeliveredItems = [
+          ...persistedDeliveredItems,
+          { orderId, itemId },
+        ];
         setPersistedDeliveredItems(updatedDeliveredItems);
-        localStorage.setItem(LS_DELIVERED_ORDERS_KEY, JSON.stringify(updatedDeliveredItems));
-        
-        await axios.put('/api/cart', { 
-          docId: orderId,
-          isReady: true 
-        }, {
-          headers: {
-            'Content-Type': 'application/json',
+        localStorage.setItem(
+          LS_DELIVERED_ORDERS_KEY,
+          JSON.stringify(updatedDeliveredItems)
+        );
+
+        await axios.put(
+          "/api/cart",
+          {
+            docId: orderId,
+            isReady: true,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
           }
-        });
+        );
       }
-  
+
       mutate();
     } catch (err) {
-      console.error('Gagal memperbarui status:', err);
+      console.error("Gagal memperbarui status:", err);
       setLocalOrders(ordersData?.data || []);
-      alert('Gagal memperbarui status. Silakan coba lagi.');
+      alert("Gagal memperbarui status. Silakan coba lagi.");
     }
   };
 
   const getFoodItemsByStatus = (status: string) => {
     const items: { order: Order; item: CartItem }[] = [];
-    
-    localOrders.forEach(order => {
-      order.cart.forEach(item => {
+
+    localOrders.forEach((order) => {
+      order.cart.forEach((item) => {
         if (item.status === status && item.category === "makanan") {
           items.push({ order, item });
         }
       });
     });
-    
-    return items.sort((a, b) => b.order.createdAt.seconds - a.order.createdAt.seconds);
+
+    return items.sort(
+      (a, b) => b.order.createdAt.seconds - a.order.createdAt.seconds
+    );
   };
 
   const clearLocalStorage = () => {
-    if (confirm("Hapus semua data tersimpan? Ini akan mengembalikan semua pesanan ke status aslinya.")) {
+    if (
+      confirm(
+        "Hapus semua data tersimpan? Ini akan mengembalikan semua pesanan ke status aslinya."
+      )
+    ) {
       localStorage.removeItem(LS_READY_ORDERS_KEY);
       localStorage.removeItem(LS_DELIVERED_ORDERS_KEY);
       setPersistedReadyItems([]);
@@ -188,7 +228,9 @@ const KitchenPage = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="bg-white p-6 rounded-lg shadow-md text-center max-w-md">
-          <h2 className="text-xl font-bold text-red-600 mb-2">Terjadi Kesalahan</h2>
+          <h2 className="text-xl font-bold text-red-600 mb-2">
+            Terjadi Kesalahan
+          </h2>
           <p className="text-gray-700 mb-4">{error.message}</p>
           <button
             onClick={() => mutate()}
@@ -208,7 +250,9 @@ const KitchenPage = () => {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center">
             <Utensils className="w-8 h-8 text-orange-600 mr-3" />
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Sistem Pesanan Dapur (Makanan)</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+              Sistem Pesanan Dapur (Makanan)
+            </h1>
           </div>
           <button
             onClick={clearLocalStorage}
@@ -225,7 +269,8 @@ const KitchenPage = () => {
           <div className="bg-white rounded-xl shadow-md overflow-hidden border border-yellow-200">
             <div className="bg-yellow-500 px-4 py-3">
               <h2 className="text-white font-semibold flex items-center">
-                <Clock className="mr-2" /> Menunggu ({getFoodItemsByStatus("pending").length})
+                <Clock className="mr-2" /> Menunggu (
+                {getFoodItemsByStatus("pending").length})
               </h2>
             </div>
             <div className="p-4 space-y-4 min-h-[400px]">
@@ -242,21 +287,26 @@ const KitchenPage = () => {
                     <div className="flex items-center mb-3">
                       <User className="w-5 h-5 text-gray-500 mr-2" />
                       <div>
-                        <h3 className="font-bold">{order.user.username || "Pelanggan"}</h3>
+                        <h3 className="font-bold">
+                          {order.user.username || "Pelanggan"}
+                        </h3>
                         <p className="text-sm text-gray-500">
-                          {order.user.table ? `Meja ${order.user.table}` : "Take Away"}
+                          {order.user.table
+                            ? `Meja ${order.user.table}`
+                            : "Take Away"}
                         </p>
                       </div>
                     </div>
 
                     {/* Food Image */}
                     <div className="w-full h-32 mb-3 rounded-lg overflow-hidden bg-gray-100">
-                      <img 
-                        src={item.image} 
+                      <img
+                        src={item.image}
                         alt={item.name}
                         className="w-full h-full object-cover"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = "https://via.placeholder.com/300x200?text=Makanan";
+                          (e.target as HTMLImageElement).src =
+                            "https://via.placeholder.com/300x200?text=Makanan";
                         }}
                       />
                     </div>
@@ -271,7 +321,7 @@ const KitchenPage = () => {
                           {getMinutesSince(order.createdAt.seconds)} mnt
                         </span>
                       </div>
-                      
+
                       {/* Dessert Information */}
                       {item.dessert && (
                         <div className="flex items-center mt-2 text-sm text-purple-700 bg-purple-50 p-2 rounded">
@@ -279,7 +329,7 @@ const KitchenPage = () => {
                           <span>Dessert: {item.dessert}</span>
                         </div>
                       )}
-                      
+
                       {item.notes && (
                         <p className="text-xs text-gray-500 mt-2 bg-blue-50 p-2 rounded">
                           📝 Catatan: {item.notes}
@@ -288,7 +338,9 @@ const KitchenPage = () => {
                     </div>
 
                     <button
-                      onClick={() => updateItemStatus(order.id, item.id, "ready")}
+                      onClick={() =>
+                        updateItemStatus(order.id, item.id, "ready")
+                      }
                       className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm"
                     >
                       Tandai Siap Antar
@@ -308,7 +360,8 @@ const KitchenPage = () => {
           <div className="bg-white rounded-xl shadow-md overflow-hidden border border-blue-200">
             <div className="bg-blue-500 px-4 py-3">
               <h2 className="text-white font-semibold flex items-center">
-                <CheckCircle className="mr-2" /> Siap Antar ({getFoodItemsByStatus("ready").length})
+                <CheckCircle className="mr-2" /> Siap Antar (
+                {getFoodItemsByStatus("ready").length})
               </h2>
             </div>
             <div className="p-4 space-y-4 min-h-[400px]">
@@ -325,21 +378,26 @@ const KitchenPage = () => {
                     <div className="flex items-center mb-3">
                       <User className="w-5 h-5 text-gray-500 mr-2" />
                       <div>
-                        <h3 className="font-bold">{order.user.username || "Pelanggan"}</h3>
+                        <h3 className="font-bold">
+                          {order.user.username || "Pelanggan"}
+                        </h3>
                         <p className="text-sm text-gray-500">
-                          {order.user.table ? `Meja ${order.user.table}` : "Take Away"}
+                          {order.user.table
+                            ? `Meja ${order.user.table}`
+                            : "Take Away"}
                         </p>
                       </div>
                     </div>
 
                     {/* Food Image */}
                     <div className="w-full h-32 mb-3 rounded-lg overflow-hidden bg-gray-100">
-                      <img 
-                        src={item.image} 
+                      <img
+                        src={item.image}
                         alt={item.name}
                         className="w-full h-full object-cover"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = "https://via.placeholder.com/300x200?text=Makanan";
+                          (e.target as HTMLImageElement).src =
+                            "https://via.placeholder.com/300x200?text=Makanan";
                         }}
                       />
                     </div>
@@ -354,7 +412,7 @@ const KitchenPage = () => {
                           {getMinutesSince(order.createdAt.seconds)} mnt
                         </span>
                       </div>
-                      
+
                       {/* Dessert Information */}
                       {item.dessert && (
                         <div className="flex items-center mt-2 text-sm text-purple-700 bg-purple-50 p-2 rounded">
@@ -362,7 +420,7 @@ const KitchenPage = () => {
                           <span>Dessert: {item.dessert}</span>
                         </div>
                       )}
-                      
+
                       {item.notes && (
                         <p className="text-xs text-gray-500 mt-2 bg-blue-50 p-2 rounded">
                           📝 Catatan: {item.notes}
@@ -371,7 +429,9 @@ const KitchenPage = () => {
                     </div>
 
                     <button
-                      onClick={() => updateItemStatus(order.id, item.id, "delivered")}
+                      onClick={() =>
+                        updateItemStatus(order.id, item.id, "delivered")
+                      }
                       className="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition-colors text-sm"
                     >
                       Tandai Sudah Diantar
@@ -391,7 +451,8 @@ const KitchenPage = () => {
           <div className="bg-white rounded-xl shadow-md overflow-hidden border border-green-200">
             <div className="bg-green-500 px-4 py-3">
               <h2 className="text-white font-semibold flex items-center">
-                <Truck className="mr-2" /> Sudah Diantar ({getFoodItemsByStatus("delivered").length})
+                <Truck className="mr-2" /> Sudah Diantar (
+                {getFoodItemsByStatus("delivered").length})
               </h2>
             </div>
             <div className="p-4 space-y-4 min-h-[400px]">
@@ -408,21 +469,26 @@ const KitchenPage = () => {
                     <div className="flex items-center mb-3">
                       <User className="w-5 h-5 text-gray-500 mr-2" />
                       <div>
-                        <h3 className="font-bold">{order.user.username || "Pelanggan"}</h3>
+                        <h3 className="font-bold">
+                          {order.user.username || "Pelanggan"}
+                        </h3>
                         <p className="text-sm text-gray-500">
-                          {order.user.table ? `Meja ${order.user.table}` : "Take Away"}
+                          {order.user.table
+                            ? `Meja ${order.user.table}`
+                            : "Take Away"}
                         </p>
                       </div>
                     </div>
 
                     {/* Food Image */}
                     <div className="w-full h-32 mb-3 rounded-lg overflow-hidden bg-gray-100">
-                      <img 
-                        src={item.image} 
+                      <img
+                        src={item.image}
                         alt={item.name}
                         className="w-full h-full object-cover"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = "https://via.placeholder.com/300x200?text=Makanan";
+                          (e.target as HTMLImageElement).src =
+                            "https://via.placeholder.com/300x200?text=Makanan";
                         }}
                       />
                     </div>
@@ -437,7 +503,7 @@ const KitchenPage = () => {
                           {getMinutesSince(order.createdAt.seconds)} mnt
                         </span>
                       </div>
-                      
+
                       {/* Dessert Information */}
                       {item.dessert && (
                         <div className="flex items-center mt-2 text-sm text-purple-700 bg-purple-50 p-2 rounded">
@@ -445,7 +511,7 @@ const KitchenPage = () => {
                           <span>Dessert: {item.dessert}</span>
                         </div>
                       )}
-                      
+
                       {item.notes && (
                         <p className="text-xs text-gray-500 mt-2 bg-blue-50 p-2 rounded">
                           📝 Catatan: {item.notes}

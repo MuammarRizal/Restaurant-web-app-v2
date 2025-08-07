@@ -36,29 +36,37 @@ const LS_DELIVERED_DRINKS_KEY = "barista_delivered_drinks";
 const fetcher = async (url: string) => {
   const res = await fetch(url);
   if (!res.ok) {
-    throw new Error('Gagal memuat data pesanan');
+    throw new Error("Gagal memuat data pesanan");
   }
   return res.json();
 };
 
 const BaristaPage = () => {
-  const { data: ordersData, error, isLoading, mutate } = useSWR<{ data: Order[] }>('/api/cart', fetcher, {
-    refreshInterval: 5000, // Auto-refresh setiap 5 detik
-    revalidateOnFocus: true, // Revalidasi ketika window/tab mendapatkan focus
+  const {
+    data: ordersData,
+    error,
+    isLoading,
+    mutate,
+  } = useSWR<{ data: Order[] }>("/api/cart", fetcher, {
+    refreshInterval: 3000,
+    revalidateOnFocus: true,
   });
 
   const [localOrders, setLocalOrders] = useState<Order[]>([]);
-  const [persistedReadyItems, setPersistedReadyItems] = useState<{orderId: string, itemId: string}[]>([]);
-  const [persistedDeliveredItems, setPersistedDeliveredItems] = useState<{orderId: string, itemId: string}[]>([]);
+  const [persistedReadyItems, setPersistedReadyItems] = useState<
+    { orderId: string; itemId: string }[]
+  >([]);
+  const [persistedDeliveredItems, setPersistedDeliveredItems] = useState<
+    { orderId: string; itemId: string }[]
+  >([]);
 
-  // Load persisted items from localStorage on component mount
   useEffect(() => {
     try {
       const savedReadyItems = localStorage.getItem(LS_READY_DRINKS_KEY);
       if (savedReadyItems) {
         setPersistedReadyItems(JSON.parse(savedReadyItems));
       }
-      
+
       const savedDeliveredItems = localStorage.getItem(LS_DELIVERED_DRINKS_KEY);
       if (savedDeliveredItems) {
         setPersistedDeliveredItems(JSON.parse(savedDeliveredItems));
@@ -72,21 +80,23 @@ const BaristaPage = () => {
   useEffect(() => {
     if (ordersData?.data) {
       // Buat salinan deep copy dari data pesanan
-      const processedOrders = JSON.parse(JSON.stringify(ordersData.data)) as Order[];
-      
+      const processedOrders = JSON.parse(
+        JSON.stringify(ordersData.data)
+      ) as Order[];
+
       // Terapkan status dari localStorage
-      processedOrders.forEach(order => {
-        order.cart.forEach(item => {
+      processedOrders.forEach((order) => {
+        order.cart.forEach((item) => {
           // Cek apakah item ini ada di daftar ready yang tersimpan
           const isReady = persistedReadyItems.some(
-            pi => pi.orderId === order.id && pi.itemId === item.id
+            (pi) => pi.orderId === order.id && pi.itemId === item.id
           );
-          
+
           // Cek apakah item ini ada di daftar delivered yang tersimpan
           const isDelivered = persistedDeliveredItems.some(
-            pi => pi.orderId === order.id && pi.itemId === item.id
+            (pi) => pi.orderId === order.id && pi.itemId === item.id
           );
-          
+
           // Terapkan status berdasarkan prioritas (delivered > ready > original)
           if (isDelivered) {
             item.status = "delivered";
@@ -96,33 +106,38 @@ const BaristaPage = () => {
           // Jika tidak ada di kedua daftar, status original tetap dipertahankan
         });
       });
-      
+
       setLocalOrders(processedOrders);
     }
   }, [ordersData, persistedReadyItems, persistedDeliveredItems]);
 
   // Action handlers
-  const updateItemStatus = async (orderId: string, itemId: string, newStatus: "pending" | "ready" | "delivered") => {
+  const updateItemStatus = async (
+    orderId: string,
+    itemId: string,
+    newStatus: "pending" | "ready" | "delivered"
+  ) => {
     if (!confirm("Apa anda yakin?")) {
       return;
     }
-    
+
     // Optimistic UI update
-    const updatedOrders = localOrders.map(order => {
+    const updatedOrders = localOrders.map((order) => {
       if (order.id === orderId) {
         return {
           ...order,
-          cart: order.cart.map(item => {
+          cart: order.cart.map((item) => {
             if (item.id === itemId) {
               return { ...item, status: newStatus };
             }
             return item;
-          })
+          }),
         };
       }
+
       return order;
     });
-    
+
     setLocalOrders(updatedOrders);
 
     try {
@@ -130,61 +145,75 @@ const BaristaPage = () => {
       if (newStatus === "ready") {
         const updatedReadyItems = [...persistedReadyItems, { orderId, itemId }];
         setPersistedReadyItems(updatedReadyItems);
-        localStorage.setItem(LS_READY_DRINKS_KEY, JSON.stringify(updatedReadyItems));
+        localStorage.setItem(
+          LS_READY_DRINKS_KEY,
+          JSON.stringify(updatedReadyItems)
+        );
       } else if (newStatus === "delivered") {
-        const updatedDeliveredItems = [...persistedDeliveredItems, { orderId, itemId }];
+        const updatedDeliveredItems = [
+          ...persistedDeliveredItems,
+          { orderId, itemId },
+        ];
         setPersistedDeliveredItems(updatedDeliveredItems);
-        localStorage.setItem(LS_DELIVERED_DRINKS_KEY, JSON.stringify(updatedDeliveredItems));
+        localStorage.setItem(
+          LS_DELIVERED_DRINKS_KEY,
+          JSON.stringify(updatedDeliveredItems)
+        );
       }
-  
+      await axios.put(
+        "/api/cart",
+        {
+          docId: orderId,
+          isReady: true,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
       // Revalidasi data dari server
       mutate();
     } catch (err) {
-      console.error('Gagal memperbarui status:', err);
+      console.error("Gagal memperbarui status:", err);
       // Kembalikan ke state sebelumnya jika gagal
       setLocalOrders(ordersData?.data || []);
-      alert('Gagal memperbarui status. Silakan coba lagi.');
+      alert("Gagal memperbarui status. Silakan coba lagi.");
     }
   };
 
   // Filter drink items by status
   const getDrinkItemsByStatus = (status: string) => {
     const items: { order: Order; item: DrinkItem }[] = [];
-    
-    localOrders.forEach(order => {
-      order.cart.forEach(item => {
+
+    localOrders.forEach((order) => {
+      order.cart.forEach((item) => {
         if (item.status === status && item.category === "minuman") {
           items.push({ order, item });
         }
       });
     });
-    
+
     // Sort by createdAt timestamp (newest first)
-    return items.sort((a, b) => b.order.createdAt.seconds - a.order.createdAt.seconds);
+    return items.sort(
+      (a, b) => b.order.createdAt.seconds - a.order.createdAt.seconds
+    );
   };
+  console.log(localOrders);
 
   // Clear localStorage function
   const clearLocalStorage = () => {
-    if (confirm("Hapus semua data tersimpan? Ini akan mengembalikan semua pesanan ke status aslinya.")) {
+    if (
+      confirm(
+        "Hapus semua data tersimpan? Ini akan mengembalikan semua pesanan ke status aslinya."
+      )
+    ) {
       localStorage.removeItem(LS_READY_DRINKS_KEY);
       localStorage.removeItem(LS_DELIVERED_DRINKS_KEY);
       setPersistedReadyItems([]);
       setPersistedDeliveredItems([]);
       mutate(); // Revalidate data
     }
-  };
-
-  // Status styling
-  const statusStyles = {
-    pending: "bg-yellow-100 text-yellow-800",
-    ready: "bg-blue-100 text-blue-800",
-    delivered: "bg-green-100 text-green-800"
-  };
-
-  const statusIcons = {
-    pending: <Clock className="w-4 h-4" />,
-    ready: <CheckCircle className="w-4 h-4" />,
-    delivered: <Truck className="w-4 h-4" />
   };
 
   // Calculate minutes since order was created
@@ -208,7 +237,9 @@ const BaristaPage = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="bg-white p-6 rounded-lg shadow-md text-center max-w-md">
-          <h2 className="text-xl font-bold text-red-600 mb-2">Terjadi Kesalahan</h2>
+          <h2 className="text-xl font-bold text-red-600 mb-2">
+            Terjadi Kesalahan
+          </h2>
           <p className="text-gray-700 mb-4">{error.message}</p>
           <button
             onClick={() => mutate()}
@@ -228,7 +259,9 @@ const BaristaPage = () => {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center">
             <Coffee className="w-8 h-8 text-brown-600 mr-3" />
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Sistem Pesanan Minuman</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+              Sistem Pesanan Minuman
+            </h1>
           </div>
           <button
             onClick={clearLocalStorage}
@@ -245,7 +278,8 @@ const BaristaPage = () => {
           <div className="bg-white rounded-xl shadow-md overflow-hidden border border-yellow-200">
             <div className="bg-yellow-500 px-4 py-3">
               <h2 className="text-white font-semibold flex items-center">
-                <Clock className="mr-2" /> Menunggu ({getDrinkItemsByStatus("pending").length})
+                <Clock className="mr-2" /> Menunggu (
+                {getDrinkItemsByStatus("pending").length})
               </h2>
             </div>
             <div className="p-4 space-y-4 min-h-[400px]">
@@ -262,21 +296,26 @@ const BaristaPage = () => {
                     <div className="flex items-center mb-3">
                       <User className="w-5 h-5 text-gray-500 mr-2" />
                       <div>
-                        <h3 className="font-bold">{order.user.username || "Pelanggan"}</h3>
+                        <h3 className="font-bold">
+                          {order.user.username || "Pelanggan"}
+                        </h3>
                         <p className="text-sm text-gray-500">
-                          {order.user.table ? `Meja ${order.user.table}` : "Take Away"}
+                          {order.user.table
+                            ? `Meja ${order.user.table}`
+                            : "Take Away"}
                         </p>
                       </div>
                     </div>
 
                     {/* Drink Image */}
                     <div className="w-full h-32 mb-3 rounded-lg overflow-hidden">
-                      <img 
-                        src={item.image} 
+                      <img
+                        src={item.image}
                         alt={item.name}
                         className="w-full h-full object-cover"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = "https://via.placeholder.com/300x200?text=Minuman";
+                          (e.target as HTMLImageElement).src =
+                            "https://via.placeholder.com/300x200?text=Minuman";
                         }}
                       />
                     </div>
@@ -299,7 +338,9 @@ const BaristaPage = () => {
                     </div>
 
                     <button
-                      onClick={() => updateItemStatus(order.id, item.id, "ready")}
+                      onClick={() =>
+                        updateItemStatus(order.id, item.id, "ready")
+                      }
                       className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm"
                     >
                       Tandai Siap Antar
@@ -319,7 +360,8 @@ const BaristaPage = () => {
           <div className="bg-white rounded-xl shadow-md overflow-hidden border border-blue-200">
             <div className="bg-blue-500 px-4 py-3">
               <h2 className="text-white font-semibold flex items-center">
-                <CheckCircle className="mr-2" /> Siap Antar ({getDrinkItemsByStatus("ready").length})
+                <CheckCircle className="mr-2" /> Siap Antar (
+                {getDrinkItemsByStatus("ready").length})
               </h2>
             </div>
             <div className="p-4 space-y-4 min-h-[400px]">
@@ -336,21 +378,26 @@ const BaristaPage = () => {
                     <div className="flex items-center mb-3">
                       <User className="w-5 h-5 text-gray-500 mr-2" />
                       <div>
-                        <h3 className="font-bold">{order.user.username || "Pelanggan"}</h3>
+                        <h3 className="font-bold">
+                          {order.user.username || "Pelanggan"}
+                        </h3>
                         <p className="text-sm text-gray-500">
-                          {order.user.table ? `Meja ${order.user.table}` : "Take Away"}
+                          {order.user.table
+                            ? `Meja ${order.user.table}`
+                            : "Take Away"}
                         </p>
                       </div>
                     </div>
 
                     {/* Drink Image */}
                     <div className="w-full h-32 mb-3 rounded-lg overflow-hidden">
-                      <img 
-                        src={item.image} 
+                      <img
+                        src={item.image}
                         alt={item.name}
                         className="w-full h-full object-cover"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = "https://via.placeholder.com/300x200?text=Minuman";
+                          (e.target as HTMLImageElement).src =
+                            "https://via.placeholder.com/300x200?text=Minuman";
                         }}
                       />
                     </div>
@@ -373,7 +420,9 @@ const BaristaPage = () => {
                     </div>
 
                     <button
-                      onClick={() => updateItemStatus(order.id, item.id, "delivered")}
+                      onClick={() =>
+                        updateItemStatus(order.id, item.id, "delivered")
+                      }
                       className="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition-colors text-sm"
                     >
                       Tandai Sudah Diantar
@@ -393,7 +442,8 @@ const BaristaPage = () => {
           <div className="bg-white rounded-xl shadow-md overflow-hidden border border-green-200">
             <div className="bg-green-500 px-4 py-3">
               <h2 className="text-white font-semibold flex items-center">
-                <Truck className="mr-2" /> Sudah Diantar ({getDrinkItemsByStatus("delivered").length})
+                <Truck className="mr-2" /> Sudah Diantar (
+                {getDrinkItemsByStatus("delivered").length})
               </h2>
             </div>
             <div className="p-4 space-y-4 min-h-[400px]">
@@ -410,21 +460,26 @@ const BaristaPage = () => {
                     <div className="flex items-center mb-3">
                       <User className="w-5 h-5 text-gray-500 mr-2" />
                       <div>
-                        <h3 className="font-bold">{order.user.username || "Pelanggan"}</h3>
+                        <h3 className="font-bold">
+                          {order.user.username || "Pelanggan"}
+                        </h3>
                         <p className="text-sm text-gray-500">
-                          {order.user.table ? `Meja ${order.user.table}` : "Take Away"}
+                          {order.user.table
+                            ? `Meja ${order.user.table}`
+                            : "Take Away"}
                         </p>
                       </div>
                     </div>
 
                     {/* Drink Image */}
                     <div className="w-full h-32 mb-3 rounded-lg overflow-hidden">
-                      <img 
-                        src={item.image} 
+                      <img
+                        src={item.image}
                         alt={item.name}
                         className="w-full h-full object-cover"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = "https://via.placeholder.com/300x200?text=Minuman";
+                          (e.target as HTMLImageElement).src =
+                            "https://via.placeholder.com/300x200?text=Minuman";
                         }}
                       />
                     </div>

@@ -5,6 +5,7 @@ import FoodItem from "./FoodItem";
 import AddFoodForm from "./AddFoodForm";
 import axios from "axios";
 import useSWR, { mutate } from "swr";
+import { fetcher } from "@/app/utils/fetcher";
 
 type FoodItem = {
   id: number | string;
@@ -19,8 +20,6 @@ type FoodItem = {
 
 const AdminDashboard = () => {
   const [foods, setFoods] = useState<FoodItem[]>([]);
-  const fetcher = (url: string) => axios.get(url).then((res) => res.data);
-
   const { data, isLoading, error } = useSWR("/api/menus", fetcher);
 
   useEffect(() => {
