@@ -14,19 +14,20 @@ type Table = {
 const Home = () => {
   const [isNameWarningOpen, setIsNameWarningOpen] = useState<boolean>(false);
   const [name, setName] = useState<string>("");
-  const [loading, setloading] = useState<boolean>(false)
+  const [loading, setloading] = useState<boolean>(false);
   const [tableNumber, setTableNumber] = useState<string>("");
   const [showTableList, setShowTableList] = useState<boolean>(true);
+  console.log({ loading });
   const [tables] = useState<Table[]>([
     { table: "1", status: "available" },
     { table: "2", status: "available" },
     { table: "3", status: "available" },
     { table: "4", status: "available" },
-    { table: "Take Away", status: "available"}
+    { table: "Take Away", status: "available" },
   ]);
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
   const router = useRouter();
- 
+
   const closeNameWarning = (): void => setIsNameWarningOpen(false);
 
   const selectTable = (tableNum: string): void => {
@@ -35,28 +36,27 @@ const Home = () => {
 
   const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
-    setloading(true)
+    setloading(true);
     if (!name || !tableNumber) {
       setIsNameWarningOpen(true);
-      setloading(false)
+      setloading(false);
       return;
     }
 
     dispatch(updateName(name));
     dispatch(updateTable(tableNumber));
-    setloading(false)
-    router.push("/menus")
+    router.push("/menus");
   };
 
   useEffect(() => {
     const storage = localStorage.getItem("qr_code");
-    if(!storage){
+    if (!storage) {
       alert("Silahkan Scan QR Dahulu");
       router.push("/validation");
       return;
     }
-  },[])
-  const counterValue = useSelector(( state : RootState ) => state.counter.value)
+  }, []);
+  const counterValue = useSelector((state: RootState) => state.counter.value);
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white py-10 px-4">
       <div className="mx-auto max-w-4xl">
@@ -97,46 +97,53 @@ const Home = () => {
               {/* Table List */}
               {showTableList && (
                 <div className="mt-2 rounded-lg border border-gray-200 p-3">
-                <h3 className="mb-2">Pilih Meja :</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  {tables.map((table, index) => {
-                    const isLastItem = index === tables.length - 1;
-                    const isTakeAway = table.table === "Take Away";
-                    const isAvailable = table.status === "available";
-                    
-                    return (
-                      <button
-                        key={table.table}
-                        type="button"
-                        onClick={() => selectTable(table.table)}
-                        disabled={!isAvailable}
-                        className={`
+                  <h3 className="mb-2">Pilih Meja :</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {tables.map((table, index) => {
+                      const isLastItem = index === tables.length - 1;
+                      const isTakeAway = table.table === "Take Away";
+                      const isAvailable = table.status === "available";
+
+                      return (
+                        <button
+                          key={table.table}
+                          type="button"
+                          onClick={() => selectTable(table.table)}
+                          disabled={!isAvailable}
+                          className={`
                           rounded-lg p-2 text-center transition-colors cursor-pointer
-                          ${isLastItem ? 'col-span-2' : ''}
-                          ${isAvailable
-                            ? isTakeAway
-                              ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                              : 'bg-orange-100 text-orange-800 hover:bg-orange-200'
-                            : 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                          ${isLastItem ? "col-span-2" : ""}
+                          ${
+                            isAvailable
+                              ? isTakeAway
+                                ? "bg-green-100 text-green-800 hover:bg-green-200"
+                                : "bg-orange-100 text-orange-800 hover:bg-orange-200"
+                              : "bg-gray-100 text-gray-500 cursor-not-allowed"
                           }
-                          ${tableNumber === table.table ? 'ring-2 ring-orange-500' : ''}
+                          ${
+                            tableNumber === table.table
+                              ? "ring-2 ring-orange-500"
+                              : ""
+                          }
                         `}
-                      >
-                        {isTakeAway ? "Take Away" : `Meja ${table.table}`}
-                        {!isAvailable && (
-                          <span className="block text-xs text-gray-500">(Penuh)</span>
-                        )}
-                      </button>
-                    );
-                  })}
+                        >
+                          {isTakeAway ? "Take Away" : `Meja ${table.table}`}
+                          {!isAvailable && (
+                            <span className="block text-xs text-gray-500">
+                              (Penuh)
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
               )}
             </div>
 
             {loading ? (
               <div className="w-full h-10 rounded-lg py-3 font-medium text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
-                  <LoadingProgress />
+                <LoadingProgress />
               </div>
             ) : (
               <button
