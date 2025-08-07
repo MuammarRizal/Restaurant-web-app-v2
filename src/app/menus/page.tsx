@@ -28,7 +28,6 @@ const Menus = () => {
   const dispatch = useDispatch();
   const router = useRouter();
 
-  // Drink label options
   const drinkLabels = [
     "Semua",
     "tea",
@@ -36,7 +35,7 @@ const Menus = () => {
     "flavored",
     "brew",
     "powder",
-    "mixology"
+    "mixology",
   ];
 
   // Filter menu items
@@ -44,26 +43,30 @@ const Menus = () => {
     const matchesSearch = item.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
-    
+
     // For "Semua" category, we'll use a different UI structure in the return
     if (activeCategory === "Semua") {
       return matchesSearch;
     }
-    
+
     // For "makanan" category
     if (activeCategory === "makanan") {
       return item.category === "makanan" && matchesSearch;
     }
-    
+
     // For "minuman" category with label filtering
     if (activeCategory === "minuman") {
       if (activeDrinkLabel === "Semua") {
         return item.category === "minuman" && matchesSearch;
       } else {
-        return item.category === "minuman" && item.label === activeDrinkLabel && matchesSearch;
+        return (
+          item.category === "minuman" &&
+          item.label === activeDrinkLabel &&
+          matchesSearch
+        );
       }
     }
-    
+
     return false;
   });
 
@@ -76,13 +79,13 @@ const Menus = () => {
 
   // Group items by category and label for "Semua" view
   const groupedItems = {
-    makanan: filteredItems.filter(item => item.category === "makanan"),
+    makanan: filteredItems.filter((item) => item.category === "makanan"),
     minuman: drinkLabels.slice(1).reduce((acc, label) => {
       acc[label] = filteredItems.filter(
-        item => item.category === "minuman" && item.label === label
+        (item) => item.category === "minuman" && item.label === label
       );
       return acc;
-    }, {} as Record<string, MenuItem[]>)
+    }, {} as Record<string, MenuItem[]>),
   };
 
   // Cart functions
@@ -135,10 +138,10 @@ const Menus = () => {
       try {
         const response = await axios.get("/api/menus");
         const allMenus = response.data.data;
-        
+
         // Set all menus
         setMenus(allMenus);
-        
+
         // Separate foods and drinks for potential future use
         const foodsData = allMenus.filter(
           (item: MenuItem) => item.category === "makanan"
@@ -146,7 +149,7 @@ const Menus = () => {
         const drinksData = allMenus.filter(
           (item: MenuItem) => item.category === "minuman"
         );
-        
+
         setFoods(foodsData);
         setDrinks(drinksData);
       } catch (error: any) {
@@ -183,25 +186,21 @@ const Menus = () => {
       </div>
       <div className="p-3">
         {/* <h3 className="font-medium">{item.name}</h3> */}
-        
+
         {/* Display category-specific properties */}
         {item.category === "makanan" && (
           <p className="text-sm text-gray-500 mt-1">
             🍰 Dessert: {item.dessert || "N/A"}
           </p>
         )}
-        
+
         {item.category === "minuman" && (
           <p className="text-sm text-gray-500 mt-1">
             🏷️ {capitalizeEachWord(item.label) || "N/A"}
           </p>
         )}
-        
-        <ButtonAddCart
-          item={item}
-          addToCart={addToCart}
-          cart={cart}
-        />
+
+        <ButtonAddCart item={item} addToCart={addToCart} cart={cart} />
       </div>
     </div>
   );
@@ -212,7 +211,9 @@ const Menus = () => {
       <header className="bg-orange-600 text-white py-4 shadow-md">
         <div className="container mx-auto px-4">
           <h1 className="text-2xl font-bold">Open Kedai</h1>
-          <p className="text-sm">Pusat Pelatihan Kerja Daerah Jakarta Selatan</p>
+          <p className="text-sm">
+            Pusat Pelatihan Kerja Daerah Jakarta Selatan
+          </p>
         </div>
       </header>
 
@@ -276,15 +277,17 @@ const Menus = () => {
                 {/* Food section */}
                 {groupedItems.makanan.length > 0 && (
                   <div>
-                    <h2 className="text-xl font-semibold mb-4 pb-2 border-b border-gray-200">🍔 Makanan</h2>
+                    <h2 className="text-xl font-semibold mb-4 pb-2 border-b border-gray-200">
+                      🍔 Makanan
+                    </h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       {groupedItems.makanan.map(renderMenuItem)}
                     </div>
                   </div>
                 )}
-                
+
                 {/* Drink sections, grouped by label */}
-                {Object.entries(groupedItems.minuman).map(([label, items]) => 
+                {Object.entries(groupedItems.minuman).map(([label, items]) =>
                   items.length > 0 ? (
                     <div key={label}>
                       <h2 className="text-xl font-semibold mb-4 pb-2 border-b border-gray-200">
@@ -296,20 +299,22 @@ const Menus = () => {
                     </div>
                   ) : null
                 )}
-                
+
                 {/* No results message */}
-                {groupedItems.makanan.length === 0 && 
-                 Object.values(groupedItems.minuman).every(items => items.length === 0) && (
-                  <div className="text-center py-8 text-gray-500">
-                    <p>Tidak ada menu yang ditemukan</p>
-                  </div>
-                )}
+                {groupedItems.makanan.length === 0 &&
+                  Object.values(groupedItems.minuman).every(
+                    (items) => items.length === 0
+                  ) && (
+                    <div className="text-center py-8 text-gray-500">
+                      <p>Tidak ada menu yang ditemukan</p>
+                    </div>
+                  )}
               </div>
             ) : (
               // For specific categories
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredItems.map(renderMenuItem)}
-                
+
                 {filteredItems.length === 0 && (
                   <div className="col-span-3 text-center py-8 text-gray-500">
                     <p>Tidak ada menu yang ditemukan</p>
@@ -332,7 +337,9 @@ const Menus = () => {
               </h2>
               <div className="table ms-auto">
                 <h2 className="text-xl font-bold">
-                  <span className="ms-auto">{capitalizeEachWord(username)}</span>
+                  <span className="ms-auto">
+                    {capitalizeEachWord(username)}
+                  </span>
                 </h2>
                 <p className="text-end">
                   {table !== "Take Away" ? `Meja ${table}` : table}

@@ -1,22 +1,21 @@
 "use client";
+import axios from "axios";
 import { useState } from "react";
+import { mutate } from "swr";
 const AddFoodForm = ({ onAddFood }: any) => {
-  const [category, setCategory] = useState("food");
+  const [category, setCategory] = useState("makanan");
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     image: "",
     quantity: "",
-    category: "main",
+    category: "makanan",
   });
-
-  console.log(category);
 
   const handleChange = (e: any) => {
     const { name, value } = e.target;
-    if (name === "category" && value === "food") {
-      setCategory("food");
-    } else {
-      setCategory("drink");
+    if (name === "category") {
+      setCategory(value);
     }
     setFormData((prev) => ({
       ...prev,
@@ -24,19 +23,51 @@ const AddFoodForm = ({ onAddFood }: any) => {
     }));
   };
 
-  const handleSubmit = (e: any) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
-    onAddFood({
-      ...formData,
-      quantity: parseFloat(formData.quantity),
-      id: Date.now(), // temporary ID
-    });
-    setFormData({
-      name: "",
-      image: "",
-      quantity: "",
-      category: "main",
-    });
+    const isConfirmed = window.confirm(
+      "Apakah Anda yakin ingin memasukkan pesanan?"
+    );
+    if (!isConfirmed) return;
+    try {
+      setLoading(true);
+      const { data } = await axios.post("/api/menus", {
+        ...formData,
+        quantity: parseFloat(formData.quantity),
+        id: Date.now(),
+      });
+      if (data.message === "Data sudah ada") {
+        alert(`Makanan/Minuman ${data.data.name} Sudah Ada`);
+        return;
+      }
+      setFormData({
+        name: "",
+        image: "",
+        quantity: "",
+        category: "makanan",
+      });
+
+      setCategory("makanan");
+      if (e.target.dessert) {
+        e.target.dessert.value = "";
+      }
+      mutate("/api/menus");
+      setFormData({
+        name: "",
+        image: "",
+        quantity: "",
+        category: "makanan",
+      });
+
+      setCategory("makanan");
+      if (e.target.dessert) {
+        e.target.dessert.value = "";
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -72,17 +103,17 @@ const AddFoodForm = ({ onAddFood }: any) => {
           <label className="block text-gray-700 mb-2">Kategori</label>
           <select
             name="category"
-            value={formData.category}
             onChange={handleChange}
+            value={category}
             className="w-full p-2 border rounded"
           >
-            <option value="food">Makanan</option>
-            <option value="drink">Minuman</option>
+            <option value="makanan">Makanan</option>
+            <option value="minuman">Minuman</option>
           </select>
         </div>
 
         {/* JIKA KATEGORI NYA MINUMAN MAKA TAMPILKAN INI */}
-        {category === "food" ? (
+        {category === "makanan" ? (
           <div>
             <label className="block text-gray-700 mb-2">Dessert</label>
             <input
@@ -99,11 +130,13 @@ const AddFoodForm = ({ onAddFood }: any) => {
             <select
               name="label"
               onChange={handleChange}
+              required
               className="w-full p-2 border rounded"
             >
+              <option>Pilih</option>
               <option value="tea">Tea</option>
               <option value="coffee">Coffee</option>
-              <option value="powder">Powder</option>
+              <option value="non-coffee">Non Coffee</option>
             </select>
           </div>
         )}
@@ -112,8 +145,8 @@ const AddFoodForm = ({ onAddFood }: any) => {
         <label className="block text-gray-700 mt-2">Image URL</label>
         <input
           type="text"
-          name="name"
-          value={formData.name}
+          name="image"
+          value={formData.image}
           onChange={handleChange}
           className="w-full p-2 border rounded"
           placeholder="https://examples.com/image.jpg"
@@ -122,9 +155,14 @@ const AddFoodForm = ({ onAddFood }: any) => {
       </div>
       <button
         type="submit"
-        className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        className={`${
+          loading
+            ? "bg-red-400 hover:bg-red-700"
+            : "bg-blue-600 hover:bg-blue-700"
+        } mt-4  text-white px-4 py-2 rounded `}
+        disabled={loading}
       >
-        Tambahkan Menu
+        {loading ? "Loading" : "Tambahkan Menu"}
       </button>
     </form>
   );

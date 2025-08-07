@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     if (data.length) {
       return NextResponse.json({
         message: "Data sudah ada",
-        data,
+        data: { ...data[0] },
       });
     }
 

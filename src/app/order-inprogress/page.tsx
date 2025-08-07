@@ -1,4 +1,5 @@
 "use client";
+import { API_URL } from "@/utils/const";
 import { motion } from "framer-motion";
 import { Clock, CookingPot, Home, ScanQrCode } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -72,7 +73,7 @@ const OrderInProgress = () => {
           whileTap={{ scale: 0.95 }}
           onClick={() => {
             // router.push('/')
-            window.location.href = "http://localhost:3000/validation";
+            window.location.href = `${API_URL}/validation`;
             localStorage.clear();
           }}
           className="cursor-pointer mt-6 flex items-center justify-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors mx-auto"

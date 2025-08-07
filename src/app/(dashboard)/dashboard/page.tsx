@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import FoodItem from "./FoodItem";
 import AddFoodForm from "./AddFoodForm";
 import axios from "axios";
+import useSWR, { mutate } from "swr";
 
 type FoodItem = {
   id: number | string;
@@ -12,31 +13,21 @@ type FoodItem = {
   image: string;
   quantity: number;
   category: string;
+  dessert?: string;
+  label?: string;
 };
 
 const AdminDashboard = () => {
   const [foods, setFoods] = useState<FoodItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  console.log(foods);
+  const fetcher = (url: string) => axios.get(url).then((res) => res.data);
+
+  const { data, isLoading, error } = useSWR("/api/menus", fetcher);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const { data } = await axios.get("/api/menus");
-        setFoods(data.data);
-      } catch (error) {
-        console.log(error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
-  console.log(foods);
-  const handleAddFood = (newFood: any) => {
-    console.log({ newFood });
-    setFoods((prev) => [...prev, newFood]);
-  };
+    if (data && data.data) {
+      setFoods(data.data);
+    }
+  }, [data]);
 
   const handleDeleteFood = (id: any) => {
     setFoods((prev) => prev.filter((food) => food.id !== id));
@@ -54,19 +45,19 @@ const AdminDashboard = () => {
           <div className="bg-white p-4 rounded-lg shadow-md">
             <h3 className="text-gray-500">Menu Utama</h3>
             <p className="text-3xl font-bold">
-              {foods.filter((food) => food.category === "main").length}
+              {foods.filter((food) => food.category === "makanan").length}
             </p>
           </div>
           <div className="bg-white p-4 rounded-lg shadow-md">
             <h3 className="text-gray-500">Minuman</h3>
             <p className="text-3xl font-bold">
-              {foods.filter((food) => food.category === "drink").length}
+              {foods.filter((food) => food.category === "minuman").length}
             </p>
           </div>
         </div>
       </div>
 
-      <AddFoodForm onAddFood={handleAddFood} />
+      <AddFoodForm />
 
       <div>
         <h2 className="text-xl font-bold mb-4">Daftar Menu</h2>
@@ -77,11 +68,37 @@ const AdminDashboard = () => {
             Belum ada menu makanan. Silakan tambahkan menu.
           </p>
         ) : (
-          <div className="space-y-4">
-            {foods.map((food) => (
-              <FoodItem key={food.id} food={food} onDelete={handleDeleteFood} />
-            ))}
-          </div>
+          <>
+            <div>
+              <h3 className="text-lg font-semibold mt-6 mb-2">Makanan</h3>
+              <div className="space-y-4">
+                {foods
+                  .filter((food) => food.category === "makanan")
+                  .map((food) => (
+                    <FoodItem
+                      key={food.id}
+                      food={food}
+                      onDelete={handleDeleteFood}
+                    />
+                  ))}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold mt-6 mb-2">Minuman</h3>
+              <div className="space-y-4">
+                {foods
+                  .filter((food) => food.category === "minuman")
+                  .map((food) => (
+                    <FoodItem
+                      key={food.id}
+                      food={food}
+                      onDelete={handleDeleteFood}
+                    />
+                  ))}
+              </div>
+            </div>
+          </>
         )}
       </div>
     </>
