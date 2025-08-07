@@ -6,7 +6,7 @@ function getIdFromUrl(url: string) {
   return parts[parts.length - 1]; // ambil bagian terakhir
 }
 
-export async function DELETE(request: NextRequest, params: { locale: string }) {
+export async function POST(request: NextRequest, params: { locale: string }) {
   const id = getIdFromUrl(request.url);
   try {
     const data = await deleteMenu("menus", id);

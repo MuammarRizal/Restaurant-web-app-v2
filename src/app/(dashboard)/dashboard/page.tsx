@@ -31,7 +31,7 @@ const AdminDashboard = () => {
   const handleDeleteFood = async (id: string) => {
     const isConfirmed = confirm("Yakin ingin menghapus Data ? ");
     if (isConfirmed) {
-      await axios.delete(`/api/menus/${id}`);
+      await axios.post(`/api/menus/${id}`);
       mutate("/api/menus");
     }
   };
