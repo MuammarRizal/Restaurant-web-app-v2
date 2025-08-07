@@ -2,6 +2,7 @@ import { toTitleCase } from "@/utils/func";
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -87,6 +88,22 @@ export async function updateOrderStatus(
     return true;
   } catch (error) {
     console.error("Error updating order status:", error);
+    return false;
+  }
+}
+
+export async function deleteMenu(collectionName: string, id: string) {
+  try {
+    const docRef = doc(firestore, collectionName, id);
+    const response = await getDoc(docRef);
+    if (response.exists()) {
+      await deleteDoc(docRef);
+      return response.data();
+    } else {
+      return false;
+    }
+  } catch (error) {
+    console.error("Error delete doc");
     return false;
   }
 }

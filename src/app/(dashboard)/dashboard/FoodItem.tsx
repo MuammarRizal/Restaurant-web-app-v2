@@ -7,12 +7,12 @@ interface FoodProps {
     dessert?: string;
     quantity: number;
   };
-  onDelete: (id: string | number) => void;
+  onDelete: (id: string) => void;
 }
 
 const FoodItem = ({ food, onDelete }: FoodProps) => {
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 flex justify-between items-center">
+    <div className="bg-white rounded-lg shadow-md p-4 flex justify-between items-center ">
       <div className="flex gap-7">
         <div className="">
           <img src={food.image} alt={food.name} className="w-24" />
@@ -24,12 +24,12 @@ const FoodItem = ({ food, onDelete }: FoodProps) => {
         </div>
       </div>
       <div>
-        <button className="bg-yellow-500 text-white px-3 py-1 rounded mr-2">
+        <button className="bg-yellow-500 text-white px-3 py-1 rounded mr-2 cursor-pointer">
           Edit
         </button>
         <button
-          className="bg-red-500 text-white px-3 py-1 rounded"
-          onClick={() => onDelete(food.id)}
+          className="bg-red-500 text-white px-3 py-1 rounded cursor-pointer"
+          onClick={() => onDelete(food.id as string)}
         >
           Delete
         </button>

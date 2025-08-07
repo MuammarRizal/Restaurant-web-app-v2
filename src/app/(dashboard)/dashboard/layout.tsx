@@ -8,7 +8,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   // Daftar menu sidebar
   const menuItems = [
     {
-      href: "/admin",
+      href: "/dashboard",
       title: "Dashboard",
       icon: (
         <svg
@@ -22,8 +22,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       ),
     },
     {
-      href: "/admin/menu",
-      title: "Menu Management",
+      href: "/dashboard",
+      title: "On Progres",
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -41,8 +41,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       ),
     },
     {
-      href: "/admin/orders",
-      title: "Orders",
+      href: "/dashboard",
+      title: "On Progres",
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -59,8 +59,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       ),
     },
     {
-      href: "/admin/customers",
-      title: "Customers",
+      href: "/dashboard",
+      title: "On Progres",
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -73,8 +73,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       ),
     },
     {
-      href: "/admin/settings",
-      title: "Settings",
+      href: "/dashboard",
+      title: "On Progres",
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"

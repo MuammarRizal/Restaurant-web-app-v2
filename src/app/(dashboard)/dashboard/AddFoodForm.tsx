@@ -149,7 +149,7 @@ const AddFoodForm = ({ onAddFood }: any) => {
           value={formData.image}
           onChange={handleChange}
           className="w-full p-2 border rounded"
-          placeholder="https://examples.com/image.jpg"
+          placeholder="https://examples.com/image.jpg | Ambil Dari google (Copy Image Address)"
           required
         />
       </div>

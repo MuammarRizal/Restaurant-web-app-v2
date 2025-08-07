@@ -1,5 +1,6 @@
 import {
   addMenu,
+  deleteMenu,
   findDataFirebaseByName,
   retrieveData,
 } from "@/lib/firebase/service";
