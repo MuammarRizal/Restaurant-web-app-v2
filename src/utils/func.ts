@@ -8,3 +8,8 @@ export function toTitleCase(text: string): string {
     .map((word) => word[0].toUpperCase() + word.slice(1))
     .join(" ");
 }
+
+export const playSound = () => {
+  const sound = new Audio("/mp3/orderan.mp3"); // letakkan file sound.mp3 di folder public
+  sound.play();
+};

@@ -2,31 +2,10 @@
 import useSWR from "swr";
 import { motion, AnimatePresence } from "framer-motion";
 import { Clock, CheckCircle, Truck, Coffee, User, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import axios from "axios";
-
-type DrinkItem = {
-  id: string;
-  name: string;
-  quantity: number;
-  notes?: string;
-  image: string;
-  category: string;
-  status: "pending" | "ready" | "delivered";
-};
-
-type Order = {
-  id: string;
-  user: {
-    username: string;
-    table: string;
-  };
-  cart: DrinkItem[];
-  createdAt: {
-    seconds: number;
-    nanoseconds: number;
-  };
-};
+import { DrinkItem, Order } from "@/types/menus";
+import { usePlayAudioOnNewData } from "@/hooks/useAudioOnNewData";
 
 // Kunci untuk localStorage
 const LS_READY_DRINKS_KEY = "barista_ready_drinks";
@@ -52,6 +31,7 @@ const BaristaPage = () => {
     revalidateOnFocus: true,
   });
 
+  const { audioRef } = usePlayAudioOnNewData(ordersData);
   const [localOrders, setLocalOrders] = useState<Order[]>([]);
   const [persistedReadyItems, setPersistedReadyItems] = useState<
     { orderId: string; itemId: string }[]
@@ -254,6 +234,8 @@ const BaristaPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+      <audio ref={audioRef} src="/mp3/orderan.mp3" preload="auto" />
+
       <div className="w-full mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -263,13 +245,13 @@ const BaristaPage = () => {
               Sistem Pesanan Minuman
             </h1>
           </div>
-          <button
+          {/* <button
             onClick={clearLocalStorage}
             className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded transition-colors"
             title="Reset data tersimpan di perangkat ini"
           >
             Reset Data Lokal
-          </button>
+          </button> */}
         </div>
 
         {/* Order Columns */}

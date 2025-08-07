@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { usePlayAudioOnNewData } from "@/hooks/useAudioOnNewData";
 
 type CartItem = {
   id: string;
@@ -58,6 +59,7 @@ const KitchenPage = () => {
     refreshInterval: 5000,
     revalidateOnFocus: true,
   });
+  const { audioRef } = usePlayAudioOnNewData(ordersData);
 
   const [localOrders, setLocalOrders] = useState<Order[]>([]);
   const [persistedReadyItems, setPersistedReadyItems] = useState<
@@ -245,6 +247,7 @@ const KitchenPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+      <audio ref={audioRef} src="/mp3/orderan.mp3" preload="auto" />
       <div className="w-full mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -254,13 +257,13 @@ const KitchenPage = () => {
               Sistem Pesanan Dapur (Makanan)
             </h1>
           </div>
-          <button
+          {/* <button
             onClick={clearLocalStorage}
             className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded transition-colors"
             title="Reset data tersimpan di perangkat ini"
           >
             Reset Data Lokal
-          </button>
+          </button> */}
         </div>
 
         {/* Order Columns */}

@@ -78,7 +78,7 @@ const AddFoodForm = ({ onAddFood }: any) => {
       <h2 className="text-xl font-bold mb-4">Tambah Menu Makanan</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-gray-700 mb-2">Nama Makanan</label>
+          <label className="block text-gray-700 mb-2">Nama Menu</label>
           <input
             type="text"
             name="name"
