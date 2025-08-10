@@ -15,24 +15,37 @@ const OrderTable = () => {
   const { cart, users } = useSelector((state: RootState) => state);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editedNote, setEditedNote] = useState("");
-  const [loading, setloading] = useState<boolean>(false)
+  const [loading, setloading] = useState<boolean>(false);
+  console.log({ cart });
   const handleOrder = async () => {
-    setloading(true)
-    try{
-      // console.log("cart:",{cart,users})
-      const response = await axios.post("/api/cart",{cart: cart, user: users})
-      if(response.status !== 200 ){
-        console.log("response:",{response})
-        console.log("response:",{status: response.status})
-        alert("Ada yang salah nih servernya")
-        throw new Error('Something went wrong');
+    setloading(true);
+    try {
+      console.log("cart:", { cart, users });
+      const response = await axios.post("/api/cart", {
+        cart: cart,
+        user: users,
+      });
+      if (response.status !== 200) {
+        console.log("response:", { response });
+        console.log("response:", { status: response.status });
+        alert("Ada yang salah nih servernya");
+        throw new Error("Something went wrong");
       }
-
-      alert("Data berhasil ditambahkan")
+      cart.forEach(async (item) => {
+        await axios.put(`/api/menus/${item.id}`, {
+          name: item.name,
+          quantity: item.quantity - 1,
+          category: item.category,
+          dessert: item.dessert,
+          label: item.label,
+          image: item.image,
+        });
+      });
+      alert("Data berhasil ditambahkan");
       dispatch(clearCart());
       router.push("/order-inprogress");
-    }catch(error){
-      console.log(error)
+    } catch (error) {
+      console.log(error);
     }
   };
 
@@ -68,22 +81,29 @@ const OrderTable = () => {
             Daftar Pesanan
           </h2>
           <div className="mt-2 text-sm text-gray-600">
-            <p>Pelanggan: <span className="font-medium">{users.username}</span></p>
-            <p>Meja: <span className="font-medium">{users.table !== "Take Away" ? `Meja ${users.table}` : "Take Away"}</span></p>
+            <p>
+              Pelanggan: <span className="font-medium">{users.username}</span>
+            </p>
+            <p>
+              Meja:{" "}
+              <span className="font-medium">
+                {users.table !== "Take Away"
+                  ? `Meja ${users.table}`
+                  : "Take Away"}
+              </span>
+            </p>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-4">
           <div className="bg-orange-100 text-orange-800 px-3 py-2 rounded-lg">
             Total Item: <span className="font-bold">{totalItems}</span>
           </div>
           {loading ? (
-            <div
-            className="flex items-center gap-2 px-4 py-2 bg-slate-500 text-white rounded-lg hover:bg-slate-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-          >
-            <span>Mohon Tunggu ...</span>
-            <ArrowRight className="w-4 h-4" />
-          </div>
+            <div className="flex items-center gap-2 px-4 py-2 bg-slate-500 text-white rounded-lg hover:bg-slate-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed">
+              <span>Mohon Tunggu ...</span>
+              <ArrowRight className="w-4 h-4" />
+            </div>
           ) : (
             <button
               onClick={handleOrder}
@@ -114,16 +134,28 @@ const OrderTable = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Menu
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Kategori
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Jumlah
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Catatan
                     </th>
                   </tr>
@@ -145,12 +177,15 @@ const OrderTable = () => {
                               src={order.image}
                               alt={order.name}
                               onError={(e) => {
-                                (e.target as HTMLImageElement).src = "https://via.placeholder.com/100?text=No+Image";
+                                (e.target as HTMLImageElement).src =
+                                  "https://via.placeholder.com/100?text=No+Image";
                               }}
                             />
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{order.name}</div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {order.name}
+                            </div>
                           </div>
                         </div>
                       </td>

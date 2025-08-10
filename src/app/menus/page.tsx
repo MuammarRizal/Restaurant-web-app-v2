@@ -105,7 +105,7 @@ const Menus = () => {
             : cartItem
         );
       }
-      return [...prevCart, { ...item, quantity: 1, status: "pending" }];
+      return [...prevCart, { ...item, status: "pending" }];
     });
   };
 

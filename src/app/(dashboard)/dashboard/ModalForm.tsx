@@ -14,8 +14,6 @@ export default function ModalForm({ data }: { data: any }) {
   });
   const [loading, setLoading] = useState(false);
 
-  //   const { data, isLoading, error } = useSWR("/api/menus", fetcher);
-
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
