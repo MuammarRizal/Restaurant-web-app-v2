@@ -164,9 +164,14 @@ const Menus = () => {
         )}
 
         {item.category === "minuman" && (
-          <p className="text-sm text-gray-500 mt-1">
-            🏷️ {capitalizeEachWord(item.label) || "N/A"}
-          </p>
+          <div className="flex justify-between">
+            <p className="text-sm text-gray-500 mt-1">
+              🏷️ {capitalizeEachWord(item.label) || "N/A"}
+            </p>
+            <p className="text-sm text-gray-500 mt-1">
+              Tersisa {item.quantity}x
+            </p>
+          </div>
         )}
 
         <ButtonAddCart item={item} addToCart={addToCart} cart={cart} />

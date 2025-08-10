@@ -1,7 +1,15 @@
 "use client";
 import useSWR from "swr";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, CheckCircle, Utensils, Coffee, Loader2, Cake } from "lucide-react";
+import {
+  Clock,
+  CheckCircle,
+  Utensils,
+  Coffee,
+  Loader2,
+  Cake,
+} from "lucide-react";
+import { capitalizeEachWord } from "../utils/util";
 
 type CartItem = {
   id: string;
@@ -43,19 +51,12 @@ const fetcher = async (url: string) => {
 };
 
 // Helper function to capitalize each word
-const capitalizeEachWord = (str: string) => {
-  if (!str) return "";
-  return str
-    .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(" ");
-};
 
 const CustomerOrderPage = () => {
   const { data, error, isLoading } = useSWR("/api/cart", fetcher, {
     refreshInterval: 5000,
     revalidateOnFocus: true,
-    dedupingInterval: 2000
+    dedupingInterval: 2000,
   });
 
   // Status configuration
@@ -65,49 +66,54 @@ const CustomerOrderPage = () => {
       color: "bg-yellow-100 text-yellow-800",
       border: "border-yellow-300",
       label: "Menunggu",
-      description: "Pesanan Anda sedang diproses"
+      description: "Pesanan Anda sedang diproses",
     },
     completed: {
       icon: <CheckCircle className="w-5 h-5" />,
       color: "bg-green-100 text-green-800",
       border: "border-green-300",
       label: "Selesai",
-      description: "Pesanan Anda sudah selesai"
-    }
+      description: "Pesanan Anda sudah selesai",
+    },
   };
 
   // Group orders by user and find the first food image
   const groupOrdersByUser = () => {
     if (!data || !data.data) return [];
-    
+
     const orders = data.data as Order[];
-    const userOrders: Record<string, { 
-      order: Order; 
-      items: CartItem[];
-      foodImage: string | null;
-      mostRecentTimestamp: number;
-    }> = {};
+    const userOrders: Record<
+      string,
+      {
+        order: Order;
+        items: CartItem[];
+        foodImage: string | null;
+        mostRecentTimestamp: number;
+      }
+    > = {};
 
     orders.forEach((order) => {
       const username = order.user.username || "Pelanggan";
       if (!userOrders[username]) {
         // Find first food item for image
-        const foodItem = order.cart.find(item => item.category === "makanan");
-        
+        const foodItem = order.cart.find((item) => item.category === "makanan");
+
         userOrders[username] = {
           order: {
             ...order,
-            cart: [] // We'll handle items separately
+            cart: [], // We'll handle items separately
           },
           items: [],
           foodImage: foodItem?.image || null,
-          mostRecentTimestamp: order.createdAt.seconds
+          mostRecentTimestamp: order.createdAt.seconds,
         };
-      } else if (order.createdAt.seconds > userOrders[username].mostRecentTimestamp) {
+      } else if (
+        order.createdAt.seconds > userOrders[username].mostRecentTimestamp
+      ) {
         // Update timestamp if this order is more recent
         userOrders[username].mostRecentTimestamp = order.createdAt.seconds;
       }
-      
+
       order.cart.forEach((item) => {
         userOrders[username].items.push(item);
         // Update food image if we find one later
@@ -118,7 +124,9 @@ const CustomerOrderPage = () => {
     });
 
     // Convert to array and sort by most recent timestamp
-    return Object.values(userOrders).sort((a, b) => b.mostRecentTimestamp - a.mostRecentTimestamp);
+    return Object.values(userOrders).sort(
+      (a, b) => b.mostRecentTimestamp - a.mostRecentTimestamp
+    );
   };
 
   // Calculate time information
@@ -140,7 +148,10 @@ const CustomerOrderPage = () => {
 
   // Render item details with category-specific properties
   const renderItemDetails = (item: CartItem) => (
-    <li key={item.id} className="text-sm mb-3 pb-3 border-b border-gray-100 last:border-b-0 last:mb-0 last:pb-0">
+    <li
+      key={item.id}
+      className="text-sm mb-3 pb-3 border-b border-gray-100 last:border-b-0 last:mb-0 last:pb-0"
+    >
       <div className="flex items-start">
         <span className="mr-2 mt-0.5 p-1 rounded-full bg-gray-100">
           {item.category === "makanan" ? (
@@ -151,14 +162,16 @@ const CustomerOrderPage = () => {
         </span>
         <div className="flex-1">
           <div className="flex justify-between">
-            <span className="font-medium">{item.quantity}x {item.name}</span>
+            <span className="font-medium">
+              {item.quantity}x {item.name}
+            </span>
             {item.status === "ready" && (
               <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">
                 Siap
               </span>
             )}
           </div>
-          
+
           {/* Display dessert for food items */}
           {item.category === "makanan" && item.dessert && (
             <div className="flex items-center mt-1 text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded-md w-fit">
@@ -166,14 +179,14 @@ const CustomerOrderPage = () => {
               {item.dessert}
             </div>
           )}
-          
+
           {/* Display label for drink items */}
           {item.category === "minuman" && item.label && (
             <div className="flex items-center mt-1 text-xs text-blue-700 bg-blue-50 px-2 py-1 rounded-md w-fit">
               {capitalizeEachWord(item.label)}
             </div>
           )}
-          
+
           {/* Notes */}
           {item.notes && (
             <p className="text-xs text-gray-600 mt-2 bg-gray-50 p-2 rounded border border-gray-100">
@@ -200,7 +213,9 @@ const CustomerOrderPage = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="bg-white p-6 rounded-lg shadow-md text-center max-w-md">
-          <h2 className="text-xl font-bold text-red-600 mb-2">Terjadi Kesalahan</h2>
+          <h2 className="text-xl font-bold text-red-600 mb-2">
+            Terjadi Kesalahan
+          </h2>
           <p className="text-gray-700 mb-4">{error.message}</p>
           <button
             onClick={() => window.location.reload()}
@@ -223,7 +238,9 @@ const CustomerOrderPage = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8 text-center py-6 max-w-4xl mx-auto"
         >
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Status Pesanan</h1>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+            Status Pesanan
+          </h1>
           <p className="text-gray-600">Lacak semua pesanan Anda di sini</p>
         </motion.div>
 
@@ -235,7 +252,7 @@ const CustomerOrderPage = () => {
               <Clock className="w-6 h-6 mr-2 text-yellow-500" />
               Pesanan Menunggu ({getWaitingOrders().length})
             </h2>
-            
+
             {/* Grid dengan jumlah kolom yang lebih banyak untuk layar besar */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6">
               <AnimatePresence>
@@ -254,14 +271,18 @@ const CustomerOrderPage = () => {
                           {statusConfig.waiting.icon}
                           <span className="ml-1">Sedang Diproses</span>
                         </p>
-                        <h3 className="font-medium text-sm">Order #{order.id.slice(0, 8)}</h3>
+                        <h3 className="font-medium text-sm">
+                          Order #{order.id.slice(0, 8)}
+                        </h3>
                       </div>
                       <div className="text-right">
                         <p className="text-xs font-semibold text-gray-700">
                           {order.user.username || "Pelanggan"}
                         </p>
                         <p className="text-xs text-gray-600">
-                          {order.user.table ? `Meja ${order.user.table}` : "Take Away"}
+                          {order.user.table
+                            ? `Meja ${order.user.table}`
+                            : "Take Away"}
                         </p>
                       </div>
                     </div>
@@ -269,11 +290,15 @@ const CustomerOrderPage = () => {
                     {/* Food Image */}
                     <div className="w-full h-36 relative">
                       <img
-                        src={foodImage || "https://cdn1.sisiplus.co.id/media/sisiplus/asset/uploads/artikel/0RzAgdXcgFYiIJEicyob41baAMoKFFIJP4FG3tOj.jpg"}
+                        src={
+                          foodImage ||
+                          "https://cdn1.sisiplus.co.id/media/sisiplus/asset/uploads/artikel/0RzAgdXcgFYiIJEicyob41baAMoKFFIJP4FG3tOj.jpg"
+                        }
                         alt="Makanan"
                         className="w-full h-full object-cover"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = "https://cdn1.sisiplus.co.id/media/sisiplus/asset/uploads/artikel/0RzAgdXcgFYiIJEicyob41baAMoKFFIJP4FG3tOj.jpg";
+                          (e.target as HTMLImageElement).src =
+                            "https://cdn1.sisiplus.co.id/media/sisiplus/asset/uploads/artikel/0RzAgdXcgFYiIJEicyob41baAMoKFFIJP4FG3tOj.jpg";
                         }}
                       />
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3">
@@ -285,7 +310,9 @@ const CustomerOrderPage = () => {
 
                     {/* Order Items */}
                     <div className="p-4">
-                      <h4 className="font-medium text-gray-800 mb-2 text-sm">Daftar Pesanan:</h4>
+                      <h4 className="font-medium text-gray-800 mb-2 text-sm">
+                        Daftar Pesanan:
+                      </h4>
                       <ul className="divide-y divide-gray-100">
                         {items.map(renderItemDetails)}
                       </ul>
@@ -302,8 +329,12 @@ const CustomerOrderPage = () => {
                 className="bg-yellow-50 border border-yellow-100 rounded-xl p-8 text-center max-w-4xl mx-auto"
               >
                 <div className="text-5xl mb-4">🕒</div>
-                <p className="text-yellow-800 font-medium">Tidak ada pesanan yang sedang diproses</p>
-                <p className="text-yellow-700 text-sm mt-1">Semua pesanan Anda telah selesai</p>
+                <p className="text-yellow-800 font-medium">
+                  Tidak ada pesanan yang sedang diproses
+                </p>
+                <p className="text-yellow-700 text-sm mt-1">
+                  Semua pesanan Anda telah selesai
+                </p>
               </motion.div>
             )}
           </section>
@@ -314,7 +345,7 @@ const CustomerOrderPage = () => {
               <CheckCircle className="w-6 h-6 mr-2 text-green-500" />
               Pesanan Selesai ({getCompletedOrders().length})
             </h2>
-            
+
             {/* Grid dengan jumlah kolom yang lebih banyak untuk layar besar */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6">
               <AnimatePresence>
@@ -333,14 +364,18 @@ const CustomerOrderPage = () => {
                           {statusConfig.completed.icon}
                           <span className="ml-1">Selesai</span>
                         </p>
-                        <h3 className="font-medium text-sm">Order #{order.id.slice(0, 8)}</h3>
+                        <h3 className="font-medium text-sm">
+                          Order #{order.id.slice(0, 8)}
+                        </h3>
                       </div>
                       <div className="text-right">
                         <p className="text-xs font-semibold text-gray-700">
                           {order.user.username || "Pelanggan"}
                         </p>
                         <p className="text-xs text-gray-600">
-                          {order.user.table ? `Meja ${order.user.table}` : "Take Away"}
+                          {order.user.table
+                            ? `Meja ${order.user.table}`
+                            : "Take Away"}
                         </p>
                       </div>
                     </div>
@@ -348,23 +383,32 @@ const CustomerOrderPage = () => {
                     {/* Food Image */}
                     <div className="w-full h-36 relative">
                       <img
-                        src={foodImage || "https://via.placeholder.com/300x200?text=Makanan"}
+                        src={
+                          foodImage ||
+                          "https://via.placeholder.com/300x200?text=Makanan"
+                        }
                         alt="Makanan"
                         className="w-full h-full object-cover brightness-90"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = "https://via.placeholder.com/300x200?text=Makanan";
+                          (e.target as HTMLImageElement).src =
+                            "https://via.placeholder.com/300x200?text=Makanan";
                         }}
                       />
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3">
                         <p className="text-white text-xs">
-                          Selesai: {order.updatedAt ? getTimeInfo(order.updatedAt) : getTimeInfo(order.createdAt)}
+                          Selesai:{" "}
+                          {order.updatedAt
+                            ? getTimeInfo(order.updatedAt)
+                            : getTimeInfo(order.createdAt)}
                         </p>
                       </div>
                     </div>
 
                     {/* Order Items */}
                     <div className="p-4">
-                      <h4 className="font-medium text-gray-800 mb-2 text-sm">Daftar Pesanan:</h4>
+                      <h4 className="font-medium text-gray-800 mb-2 text-sm">
+                        Daftar Pesanan:
+                      </h4>
                       <ul className="divide-y divide-gray-100">
                         {items.map(renderItemDetails)}
                       </ul>
@@ -381,8 +425,12 @@ const CustomerOrderPage = () => {
                 className="bg-green-50 border border-green-100 rounded-xl p-8 text-center max-w-4xl mx-auto"
               >
                 <div className="text-5xl mb-4">📋</div>
-                <p className="text-green-800 font-medium">Belum ada pesanan yang selesai</p>
-                <p className="text-green-700 text-sm mt-1">Pesanan Anda masih dalam proses</p>
+                <p className="text-green-800 font-medium">
+                  Belum ada pesanan yang selesai
+                </p>
+                <p className="text-green-700 text-sm mt-1">
+                  Pesanan Anda masih dalam proses
+                </p>
               </motion.div>
             )}
           </section>

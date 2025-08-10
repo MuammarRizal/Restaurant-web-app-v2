@@ -5,7 +5,6 @@ import FoodItem from "./FoodItem";
 import AddFoodForm from "./AddFoodForm";
 import axios from "axios";
 import useSWR, { mutate } from "swr";
-import { fetcher } from "@/app/utils/fetcher";
 
 type FoodItem = {
   id: number | string;

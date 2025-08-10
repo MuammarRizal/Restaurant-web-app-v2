@@ -162,23 +162,43 @@ const BaristaPage = () => {
     }
   };
 
-  // Filter drink items by status
-  const getDrinkItemsByStatus = (status: string) => {
-    const items: { order: Order; item: DrinkItem }[] = [];
+  // Filter orders by status - group by user instead of individual items
+  const getOrdersByStatus = (status: string) => {
+    const ordersWithDrinks: Order[] = [];
 
     localOrders.forEach((order) => {
-      order.cart.forEach((item) => {
-        if (item.status === status && item.category === "minuman") {
-          items.push({ order, item });
-        }
-      });
+      const drinkItems = order.cart.filter(
+        (item) => item.status === status && item.category === "minuman"
+      );
+
+      if (drinkItems.length > 0) {
+        // Create a new order object with only the filtered drink items
+        ordersWithDrinks.push({
+          ...order,
+          cart: drinkItems,
+        });
+      }
     });
 
     // Sort by createdAt timestamp (newest first)
-    return items.sort(
-      (a, b) => b.order.createdAt.seconds - a.order.createdAt.seconds
+    return ordersWithDrinks.sort(
+      (a, b) => b.createdAt.seconds - a.createdAt.seconds
     );
   };
+
+  // Count total drink items by status
+  const getDrinkItemsCountByStatus = (status: string) => {
+    let count = 0;
+    localOrders.forEach((order) => {
+      order.cart.forEach((item) => {
+        if (item.status === status && item.category === "minuman") {
+          count++;
+        }
+      });
+    });
+    return count;
+  };
+
   console.log(localOrders);
 
   // Clear localStorage function
@@ -245,13 +265,6 @@ const BaristaPage = () => {
               Sistem Pesanan Minuman
             </h1>
           </div>
-          {/* <button
-            onClick={clearLocalStorage}
-            className="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded transition-colors"
-            title="Reset data tersimpan di perangkat ini"
-          >
-            Reset Data Lokal
-          </button> */}
         </div>
 
         {/* Order Columns */}
@@ -261,14 +274,14 @@ const BaristaPage = () => {
             <div className="bg-yellow-500 px-4 py-3">
               <h2 className="text-white font-semibold flex items-center">
                 <Clock className="mr-2" /> Menunggu (
-                {getDrinkItemsByStatus("pending").length})
+                {getDrinkItemsCountByStatus("pending")})
               </h2>
             </div>
             <div className="p-4 space-y-4 min-h-[400px]">
               <AnimatePresence>
-                {getDrinkItemsByStatus("pending").map(({ order, item }) => (
+                {getOrdersByStatus("pending").map((order) => (
                   <motion.div
-                    key={`${order.id}-${item.id}`}
+                    key={`pending-${order.id}`}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
@@ -277,7 +290,7 @@ const BaristaPage = () => {
                     {/* Customer Info */}
                     <div className="flex items-center mb-3">
                       <User className="w-5 h-5 text-gray-500 mr-2" />
-                      <div>
+                      <div className="flex-1">
                         <h3 className="font-bold">
                           {order.user.username || "Pelanggan"}
                         </h3>
@@ -287,50 +300,63 @@ const BaristaPage = () => {
                             : "Take Away"}
                         </p>
                       </div>
+                      <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                        {getMinutesSince(order.createdAt.seconds)} mnt lalu
+                      </span>
                     </div>
 
-                    {/* Drink Image */}
-                    <div className="w-full h-32 mb-3 rounded-lg overflow-hidden">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src =
-                            "https://via.placeholder.com/300x200?text=Minuman";
-                        }}
-                      />
-                    </div>
+                    {/* Drink Items */}
+                    <div className="space-y-3">
+                      {order.cart.map((item) => (
+                        <div
+                          key={item.id}
+                          className="border-t pt-3 first:border-t-0 first:pt-0"
+                        >
+                          {/* Drink Image */}
+                          <div className="w-full h-32 mb-3 rounded-lg overflow-hidden">
+                            <img
+                              src={item.image}
+                              alt={item.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src =
+                                  "https://via.placeholder.com/300x200?text=Minuman";
+                              }}
+                            />
+                          </div>
 
-                    {/* Order Item */}
-                    <div className="text-sm mb-3">
-                      <div className="flex justify-between">
-                        <span>
-                          {item.quantity}x {item.name}
-                        </span>
-                        <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-                          {getMinutesSince(order.createdAt.seconds)} mnt
-                        </span>
-                      </div>
-                      {item.notes && (
-                        <p className="text-xs text-gray-500 mt-1 bg-blue-50 p-2 rounded">
-                          📝 {item.notes}
-                        </p>
-                      )}
-                    </div>
+                          {/* Order Item Info */}
+                          <div className="text-sm mb-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-slate-700 font-medium">
+                                {item.name}
+                              </span>
+                              <span className="text-xs bg-blue-100 px-2 py-1 rounded">
+                                {item.quantity}x
+                              </span>
+                            </div>
+                            {item.notes && (
+                              <p className="text-xs text-gray-500 mt-1 bg-blue-50 p-2 rounded">
+                                📝 {item.notes}
+                              </p>
+                            )}
+                          </div>
 
-                    <button
-                      onClick={() =>
-                        updateItemStatus(order.id, item.id, "ready")
-                      }
-                      className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm"
-                    >
-                      Tandai Siap Antar
-                    </button>
+                          <button
+                            onClick={() =>
+                              updateItemStatus(order.id, item.id, "ready")
+                            }
+                            className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm mb-2 last:mb-0"
+                          >
+                            Tandai Siap Antar
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </motion.div>
                 ))}
               </AnimatePresence>
-              {getDrinkItemsByStatus("pending").length === 0 && (
+              {getOrdersByStatus("pending").length === 0 && (
                 <div className="text-center text-gray-500 py-8">
                   Tidak ada pesanan minuman
                 </div>
@@ -343,14 +369,14 @@ const BaristaPage = () => {
             <div className="bg-blue-500 px-4 py-3">
               <h2 className="text-white font-semibold flex items-center">
                 <CheckCircle className="mr-2" /> Siap Antar (
-                {getDrinkItemsByStatus("ready").length})
+                {getDrinkItemsCountByStatus("ready")})
               </h2>
             </div>
             <div className="p-4 space-y-4 min-h-[400px]">
               <AnimatePresence>
-                {getDrinkItemsByStatus("ready").map(({ order, item }) => (
+                {getOrdersByStatus("ready").map((order) => (
                   <motion.div
-                    key={`${order.id}-${item.id}`}
+                    key={`ready-${order.id}`}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
@@ -359,7 +385,7 @@ const BaristaPage = () => {
                     {/* Customer Info */}
                     <div className="flex items-center mb-3">
                       <User className="w-5 h-5 text-gray-500 mr-2" />
-                      <div>
+                      <div className="flex-1">
                         <h3 className="font-bold">
                           {order.user.username || "Pelanggan"}
                         </h3>
@@ -369,50 +395,60 @@ const BaristaPage = () => {
                             : "Take Away"}
                         </p>
                       </div>
+                      <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                        {getMinutesSince(order.createdAt.seconds)} mnt
+                      </span>
                     </div>
 
-                    {/* Drink Image */}
-                    <div className="w-full h-32 mb-3 rounded-lg overflow-hidden">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src =
-                            "https://via.placeholder.com/300x200?text=Minuman";
-                        }}
-                      />
-                    </div>
+                    {/* Drink Items */}
+                    <div className="space-y-3">
+                      {order.cart.map((item) => (
+                        <div
+                          key={item.id}
+                          className="border-t pt-3 first:border-t-0 first:pt-0"
+                        >
+                          {/* Drink Image */}
+                          <div className="w-full h-32 mb-3 rounded-lg overflow-hidden">
+                            <img
+                              src={item.image}
+                              alt={item.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src =
+                                  "https://via.placeholder.com/300x200?text=Minuman";
+                              }}
+                            />
+                          </div>
 
-                    {/* Order Item */}
-                    <div className="text-sm mb-3">
-                      <div className="flex justify-between">
-                        <span>
-                          {item.quantity}x {item.name}
-                        </span>
-                        <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-                          {getMinutesSince(order.createdAt.seconds)} mnt
-                        </span>
-                      </div>
-                      {item.notes && (
-                        <p className="text-xs text-gray-500 mt-1 bg-blue-50 p-2 rounded">
-                          📝 {item.notes}
-                        </p>
-                      )}
-                    </div>
+                          {/* Order Item Info */}
+                          <div className="text-sm mb-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-slate-700 font-medium">
+                                {item.quantity}x {item.name}
+                              </span>
+                            </div>
+                            {item.notes && (
+                              <p className="text-xs text-gray-500 mt-1 bg-blue-50 p-2 rounded">
+                                📝 {item.notes}
+                              </p>
+                            )}
+                          </div>
 
-                    <button
-                      onClick={() =>
-                        updateItemStatus(order.id, item.id, "delivered")
-                      }
-                      className="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition-colors text-sm"
-                    >
-                      Tandai Sudah Diantar
-                    </button>
+                          <button
+                            onClick={() =>
+                              updateItemStatus(order.id, item.id, "delivered")
+                            }
+                            className="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition-colors text-sm mb-2 last:mb-0"
+                          >
+                            Tandai Sudah Diantar
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </motion.div>
                 ))}
               </AnimatePresence>
-              {getDrinkItemsByStatus("ready").length === 0 && (
+              {getOrdersByStatus("ready").length === 0 && (
                 <div className="text-center text-gray-500 py-8">
                   Tidak ada pesanan minuman
                 </div>
@@ -425,14 +461,14 @@ const BaristaPage = () => {
             <div className="bg-green-500 px-4 py-3">
               <h2 className="text-white font-semibold flex items-center">
                 <Truck className="mr-2" /> Sudah Diantar (
-                {getDrinkItemsByStatus("delivered").length})
+                {getDrinkItemsCountByStatus("delivered")})
               </h2>
             </div>
             <div className="p-4 space-y-4 min-h-[400px]">
               <AnimatePresence>
-                {getDrinkItemsByStatus("delivered").map(({ order, item }) => (
+                {getOrdersByStatus("delivered").map((order) => (
                   <motion.div
-                    key={`${order.id}-${item.id}`}
+                    key={`delivered-${order.id}`}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
@@ -441,7 +477,7 @@ const BaristaPage = () => {
                     {/* Customer Info */}
                     <div className="flex items-center mb-3">
                       <User className="w-5 h-5 text-gray-500 mr-2" />
-                      <div>
+                      <div className="flex-1">
                         <h3 className="font-bold">
                           {order.user.username || "Pelanggan"}
                         </h3>
@@ -451,45 +487,56 @@ const BaristaPage = () => {
                             : "Take Away"}
                         </p>
                       </div>
+                      <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                        {getMinutesSince(order.createdAt.seconds)} mnt
+                      </span>
                     </div>
 
-                    {/* Drink Image */}
-                    <div className="w-full h-32 mb-3 rounded-lg overflow-hidden">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src =
-                            "https://via.placeholder.com/300x200?text=Minuman";
-                        }}
-                      />
-                    </div>
+                    {/* Drink Items */}
+                    <div className="space-y-3">
+                      {order.cart.map((item) => (
+                        <div
+                          key={item.id}
+                          className="border-t pt-3 first:border-t-0 first:pt-0"
+                        >
+                          {/* Drink Image */}
+                          <div className="w-full h-32 mb-3 rounded-lg overflow-hidden">
+                            <img
+                              src={item.image}
+                              alt={item.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src =
+                                  "https://via.placeholder.com/300x200?text=Minuman";
+                              }}
+                            />
+                          </div>
 
-                    {/* Order Item */}
-                    <div className="text-sm mb-3">
-                      <div className="flex justify-between">
-                        <span>
-                          {item.quantity}x {item.name}
-                        </span>
-                        <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-                          {getMinutesSince(order.createdAt.seconds)} mnt
-                        </span>
-                      </div>
-                      {item.notes && (
-                        <p className="text-xs text-gray-500 mt-1 bg-blue-50 p-2 rounded">
-                          📝 {item.notes}
-                        </p>
-                      )}
-                    </div>
+                          {/* Order Item Info */}
+                          <div className="text-sm mb-3">
+                            <div className="flex justify-between items-center">
+                              <span className="text-slate-700 font-medium">
+                                {item.quantity}x {item.name}
+                              </span>
+                            </div>
+                            {item.notes && (
+                              <p className="text-xs text-gray-500 mt-1 bg-blue-50 p-2 rounded">
+                                📝 {item.notes}
+                              </p>
+                            )}
+                          </div>
 
-                    <div className="text-center text-green-600 text-sm py-2">
-                      <CheckCircle className="inline mr-1" /> Sudah diantar
+                          <div className="text-center text-green-600 text-sm py-2">
+                            <CheckCircle className="inline mr-1" size={16} />{" "}
+                            Sudah diantar
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </motion.div>
                 ))}
               </AnimatePresence>
-              {getDrinkItemsByStatus("delivered").length === 0 && (
+              {getOrdersByStatus("delivered").length === 0 && (
                 <div className="text-center text-gray-500 py-8">
                   Tidak ada pesanan minuman
                 </div>

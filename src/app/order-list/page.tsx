@@ -96,9 +96,9 @@ const OrderTable = () => {
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="bg-orange-100 text-orange-800 px-3 py-2 rounded-lg">
+          {/* <div className="bg-orange-100 text-orange-800 px-3 py-2 rounded-lg">
             Total Item: <span className="font-bold">{totalItems}</span>
-          </div>
+          </div> */}
           {loading ? (
             <div className="flex items-center gap-2 px-4 py-2 bg-slate-500 text-white rounded-lg hover:bg-slate-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed">
               <span>Mohon Tunggu ...</span>
@@ -196,7 +196,7 @@ const OrderTable = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <span className="px-2 py-1 bg-gray-100 rounded-md">
-                          {order.quantity}
+                          1
                         </span>
                       </td>
                       <td className="px-6 py-4">
