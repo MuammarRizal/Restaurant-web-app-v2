@@ -20,6 +20,8 @@ type FoodItem = {
 
 const AdminDashboard = () => {
   const [foods, setFoods] = useState<FoodItem[]>([]);
+
+  const fetcher = (url: string) => axios.get(url).then((res) => res.data);
   const { data, isLoading, error } = useSWR("/api/menus", fetcher);
 
   useEffect(() => {

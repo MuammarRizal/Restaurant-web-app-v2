@@ -108,9 +108,33 @@ export async function deleteMenu(collectionName: string, id: string) {
   }
 }
 
-// export async function deleteAllDataQR(collectionName: string){
-//     const docRef = await delete
-// }
+export async function updateMenu(
+  collectionName: string,
+  id: string,
+  data: any
+) {
+  try {
+    const docRef = doc(firestore, collectionName, id);
+    const updateSnap = await getDoc(docRef);
+    if (!updateSnap.exists()) {
+      return {
+        success: false,
+        message: "Menu Not Found",
+      };
+    }
+    await updateDoc(docRef, data);
+    return {
+      success: true,
+      message: "Update Data Success",
+    };
+  } catch (error) {
+    console.log(error);
+    return {
+      success: false,
+      message: "Internal Server Error",
+    };
+  }
+}
 
 export const findDataFirebaseByName = async (c: string, name: string) => {
   const q = query(collection(firestore, c), where("name", "==", name));

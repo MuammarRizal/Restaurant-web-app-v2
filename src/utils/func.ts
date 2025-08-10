@@ -13,3 +13,8 @@ export const playSound = () => {
   const sound = new Audio("/mp3/orderan.mp3"); // letakkan file sound.mp3 di folder public
   sound.play();
 };
+
+export function getIdFromUrl(url: string) {
+  const parts = url.split("/"); // pisah berdasarkan "/"
+  return parts[parts.length - 1]; // ambil bagian terakhir
+}

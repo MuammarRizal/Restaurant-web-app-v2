@@ -1,3 +1,5 @@
+import ModalForm from "./ModalForm";
+
 interface FoodProps {
   food: {
     id: number | string;
@@ -23,10 +25,8 @@ const FoodItem = ({ food, onDelete }: FoodProps) => {
           <p className="text-blue-600 font-semibold">{food.quantity}x</p>
         </div>
       </div>
-      <div>
-        <button className="bg-yellow-500 text-white px-3 py-1 rounded mr-2 cursor-pointer">
-          Edit
-        </button>
+      <div className="flex gap-4">
+        <ModalForm data={food} />
         <button
           className="bg-red-500 text-white px-3 py-1 rounded cursor-pointer"
           onClick={() => onDelete(food.id as string)}

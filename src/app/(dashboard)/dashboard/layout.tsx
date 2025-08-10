@@ -104,7 +104,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-xl font-bold">Restaurant Admin</h1>
           <div className="space-x-4">
-            <Link href="/admin" className="hover:underline">
+            <Link href="#" className="hover:underline">
               Dashboard
             </Link>
             <Link href="#" className="hover:underline">
@@ -122,8 +122,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
           </div>
           <nav className="mt-6">
             <ul>
-              {menuItems.map((item) => (
-                <li key={item.title} className="px-2 py-1">
+              {menuItems.map((item, index) => (
+                <li key={index} className="px-2 py-1">
                   <Link
                     href={item.href}
                     className={`flex items-center px-4 py-3 text-gray-600 hover:bg-blue-50 hover:text-blue-600 rounded-lg ${
